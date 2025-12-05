@@ -1,0 +1,208 @@
+@model RestaurantBookingSystem.ViewModels.HomeViewModel
+@{
+    ViewData["Title"] = "Find Your Perfect Dining Experience";
+}
+
+<div class="hero-section">
+    <div class="hero-content">
+        <h1>Discover & Book Amazing Restaurants</h1>
+        <p class="hero-subtitle">Reserve your table at the best restaurants in town</p>
+        
+        <div class="search-card">
+            <form asp-controller="Home" asp-action="Search" method="post" class="search-form">
+                <div class="search-field">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <input type="text" asp-for="Search.Location" placeholder="Location" class="search-input" />
+                </div>
+                
+                <div class="search-field">
+                    <i class="fas fa-calendar"></i>
+                    <input type="date" asp-for="Search.Date" class="search-input" />
+                </div>
+                
+                <div class="search-field">
+                    <i class="fas fa-clock"></i>
+                    <input type="time" asp-for="Search.Time" class="search-input" />
+                </div>
+                
+                <div class="search-field">
+                    <i class="fas fa-users"></i>
+                    <select asp-for="Search.PartySize" class="search-input">
+                        <option value="1">1 person</option>
+                        <option value="2" selected>2 people</option>
+                        <option value="3">3 people</option>
+                        <option value="4">4 people</option>
+                        <option value="5">5 people</option>
+                        <option value="6">6 people</option>
+                        <option value="7">7 people</option>
+                        <option value="8">8 people</option>
+                        <option value="9">9+ people</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-search">
+                    <i class="fas fa-search"></i> Find Restaurants
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Featured Restaurants</h2>
+        <div class="restaurant-grid">
+            @foreach (var restaurant in Model.FeaturedRestaurants)
+            {
+                <div class="restaurant-card">
+                    <a asp-controller="Restaurant" asp-action="Detail" asp-route-id="@restaurant.Id">
+                        <div class="restaurant-image">
+                            <img src="@restaurant.PrimaryPhotoUrl" alt="@restaurant.Name" />
+                            @if (restaurant.IsFeatured)
+                            {
+                                <span class="badge badge-featured">Featured</span>
+                            }
+                        </div>
+                        <div class="restaurant-info">
+                            <h3 class="restaurant-name">@restaurant.Name</h3>
+                            <div class="restaurant-meta">
+                                <span class="cuisine">
+                                    <i class="fas fa-utensils"></i> @restaurant.CuisineName
+                                </span>
+                                <span class="location">
+                                    <i class="fas fa-map-marker-alt"></i> @restaurant.Area, @restaurant.City
+                                </span>
+                            </div>
+                            <div class="restaurant-footer">
+                                <div class="rating">
+                                    <i class="fas fa-star"></i>
+                                    <span>@restaurant.AverageRating.ToString("0.0")</span>
+                                    <span class="reviews">(@restaurant.TotalReviews reviews)</span>
+                                </div>
+                                <div class="price-range">@restaurant.PriceRange</div>
+                            </div>
+                            @if (restaurant.IsChildFriendly || restaurant.HasOutdoorSeating)
+                            {
+                                <div class="restaurant-features">
+                                    @if (restaurant.IsChildFriendly)
+                                    {
+                                        <span class="feature-badge">
+                                            <i class="fas fa-child"></i> Child Friendly
+                                        </span>
+                                    }
+                                    @if (restaurant.HasOutdoorSeating)
+                                    {
+                                        <span class="feature-badge">
+                                            <i class="fas fa-tree"></i> Outdoor Seating
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+        
+        <div class="text-center" style="margin-top: 2rem;">
+            <a asp-controller="Restaurant" asp-action="SearchResults" class="btn btn-outline">
+                View All Restaurants <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="section bg-light">
+    <div class="container">
+        <h2 class="section-title">Browse by Cuisine</h2>
+        <div class="cuisine-scroll">
+            @foreach (var cuisine in Model.Cuisines.Take(12))
+            {
+                <a asp-controller="Restaurant" asp-action="BrowseByCuisine" asp-route-cuisine="@cuisine.Name" class="cuisine-card">
+                    <div class="cuisine-icon">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <div class="cuisine-name">@cuisine.Name</div>
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>Search</h3>
+                <p>Find the perfect restaurant by location, cuisine, or special occasion</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3>Book</h3>
+                <p>Choose your date, time, and party size. Get instant confirmation</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-icon">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <h3>Enjoy</h3>
+                <p>Show up and enjoy your dining experience. No hassle, no waiting</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content">
+            <h2>Own a Restaurant?</h2>
+            <p>Join our platform and reach thousands of diners looking for their next great meal</p>
+            <a asp-controller="Admin" asp-action="Login" class="btn btn-light btn-lg">
+                <i class="fas fa-store"></i> List Your Restaurant
+            </a>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // Set default date to tomorrow
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.querySelector('input[type="date"]');
+            if (dateInput && !dateInput.value) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                dateInput.value = tomorrow.toISOString().split('T')[0];
+                dateInput.min = tomorrow.toISOString().split('T')[0];
+            }
+
+            // Set default time to 7:00 PM
+            const timeInput = document.querySelector('input[type="time"]');
+            if (timeInput && !timeInput.value) {
+                timeInput.value = '19:00';
+            }
+
+            // Detect user location (optional)
+            if (navigator.geolocation) {
+                const locationInput = document.querySelector('input[name="Search.Location"]');
+                if (locationInput && !locationInput.value) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        // In production, use reverse geocoding API to get city name
+                        console.log('User location detected:', position.coords);
+                    });
+                }
+            }
+        });
+    </script>
+}
