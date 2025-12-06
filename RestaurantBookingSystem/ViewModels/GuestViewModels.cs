@@ -92,45 +92,45 @@ namespace RestaurantBookingSystem.ViewModels
         public string DisplayTime { get; set; }
     }
 
-    public class BookingConfirmationViewModel
-    {
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
-        
-        [Phone]
-        public string PhoneNumber { get; set; }
-        
-        [Required]
-        public string FirstName { get; set; }
-        
-        [Required]
-        public string LastName { get; set; }
-        
-        public int? OccasionId { get; set; }
-        
-        [MaxLength(1000)]
-        public string? SpecialRequests { get; set; }
-        
-        public bool ReceivePromotions { get; set; }
-        
-        // Hidden fields
-        public int RestaurantId { get; set; }
-        public DateTime Date { get; set; }
-        public TimeOnly Time { get; set; }
-        public int PartySize { get; set; }
-        public TableLocation PreferredLocation { get; set; }
-    }
+    //public class BookingConfirmationViewModel
+    //{
+    //    [Required]
+    //    [EmailAddress]
+    //    public string Email { get; set; }
+
+    //    [Phone]
+    //    public string PhoneNumber { get; set; }
+
+    //    [Required]
+    //    public string FirstName { get; set; }
+
+    //    [Required]
+    //    public string LastName { get; set; }
+
+    //    public int? OccasionId { get; set; }
+
+    //    [MaxLength(1000)]
+    //    public string? SpecialRequests { get; set; }
+
+    //    public bool ReceivePromotions { get; set; }
+
+    //    // Hidden fields
+    //    public int RestaurantId { get; set; }
+    //    public DateTime Date { get; set; }
+    //    public TimeOnly Time { get; set; }
+    //    public int PartySize { get; set; }
+    //    public TableLocation PreferredLocation { get; set; }
+    //}
 
     public class VerificationViewModel
     {
         [Required]
         public string Email { get; set; }
-        
+
         [Required]
         [StringLength(6, MinimumLength = 6)]
         public string VerificationCode { get; set; }
-        
+
         public string BookingReference { get; set; }
     }
 
@@ -146,6 +146,7 @@ namespace RestaurantBookingSystem.ViewModels
     {
         public List<ReservationViewModel> UpcomingReservations { get; set; }
         public List<ReservationViewModel> PastReservations { get; set; }
+        public List<ReservationViewModel> CancelledReservations { get; set; }
     }
 
     public class ReservationViewModel
@@ -155,13 +156,17 @@ namespace RestaurantBookingSystem.ViewModels
         public string RestaurantName { get; set; }
         public string RestaurantPhoto { get; set; }
         public DateTime ReservationDate { get; set; }
-        public TimeOnly ReservationTime { get; set; }
+        public DateTime? CancellationDate { get; set; }
+        public TimeSpan ReservationTime { get; set; }
         public int NumberOfGuests { get; set; }
+        public string TableLocation { get; set; }
+        public int TableNumber { get; set; }
         public ReservationStatus Status { get; set; }
         public string? OccasionName { get; set; }
         public string? SpecialRequests { get; set; }
         public bool CanCancel { get; set; }
         public bool CanModify { get; set; }
+        public bool HasReview { get; set; }
         public Restaurant Restaurant { get; set; }
     }
 
@@ -210,48 +215,48 @@ namespace RestaurantBookingSystem.ViewModels
         public int AmbianceRating { get; set; }
     }
 
-    public class CustomerLoginViewModel
-    {
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
+    //public class CustomerLoginViewModel
+    //{
+    //    [Required]
+    //    [EmailAddress]
+    //    public string Email { get; set; }
         
-        [Required]
-        [DataType(DataType.Password)]
-        public string Password { get; set; }
+    //    [Required]
+    //    [DataType(DataType.Password)]
+    //    public string Password { get; set; }
         
-        public bool RememberMe { get; set; }
+    //    public bool RememberMe { get; set; }
         
-        public string? ReturnUrl { get; set; }
-    }
+    //    public string? ReturnUrl { get; set; }
+    //}
 
-    public class CustomerRegisterViewModel
-    {
-        [Required]
-        [MaxLength(40)]
-        public string FirstName { get; set; }
+    //public class CustomerRegisterViewModel
+    //{
+    //    [Required]
+    //    [MaxLength(40)]
+    //    public string FirstName { get; set; }
         
-        [Required]
-        [MaxLength(50)]
-        public string LastName { get; set; }
+    //    [Required]
+    //    [MaxLength(50)]
+    //    public string LastName { get; set; }
         
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
+    //    [Required]
+    //    [EmailAddress]
+    //    public string Email { get; set; }
         
-        [Phone]
-        public string PhoneNumber { get; set; }
+    //    [Phone]
+    //    public string PhoneNumber { get; set; }
         
-        [Required]
-        [DataType(DataType.Password)]
-        [MinLength(6)]
-        public string Password { get; set; }
+    //    [Required]
+    //    [DataType(DataType.Password)]
+    //    [MinLength(6)]
+    //    public string Password { get; set; }
         
-        [Required]
-        [DataType(DataType.Password)]
-        [Compare("Password")]
-        public string ConfirmPassword { get; set; }
+    //    [Required]
+    //    [DataType(DataType.Password)]
+    //    [Compare("Password")]
+    //    public string ConfirmPassword { get; set; }
         
-        public bool ReceivePromotions { get; set; }
-    }
+    //    public bool ReceivePromotions { get; set; }
+    //}
 }

@@ -1,4 +1,5 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RestaurantBookingSystem.Models
 {
@@ -228,16 +229,16 @@ namespace RestaurantBookingSystem.Models
         public Customer Customer { get; set; }
     }
 
-    public class FavoriteRestaurant
-    {
-        public int Id { get; set; }
-        public int CustomerId { get; set; }
-        public int RestaurantId { get; set; }
-        public DateTime AddedDate { get; set; }
+    //public class FavoriteRestaurant
+    //{
+    //    public int Id { get; set; }
+    //    public int CustomerId { get; set; }
+    //    public int RestaurantId { get; set; }
+    //    public DateTime AddedDate { get; set; }
         
-        public Customer Customer { get; set; }
-        public Restaurant Restaurant { get; set; }
-    }
+    //    public Customer Customer { get; set; }
+    //    public Restaurant Restaurant { get; set; }
+    //}
 
     public class ReservationMessage
     {
@@ -286,8 +287,12 @@ namespace RestaurantBookingSystem.Models
         public DateTime CreatedDate { get; set; }
         public DateTime? LastLoginDate { get; set; }
         
-        public Restaurant Restaurant { get; set; }
-        public Role Role { get; set; }
+        //public Restaurant Restaurant { get; set; }
+        //public Role Role { get; set; }
+        public virtual Restaurant? Restaurant { get; set; }
+        public virtual Role? Role { get; set; }
+        public string? Permissions { get; set; }
+
     }
 
     public class Role

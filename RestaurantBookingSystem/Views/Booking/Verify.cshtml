@@ -1,0 +1,324 @@
+@model RestaurantBookingSystem.ViewModels.VerificationViewModel
+@{
+    ViewData["Title"] = "Verify Your Email";
+}
+
+<div class="verification-page">
+    <div class="container">
+        <div class="verification-card">
+            <div class="verification-icon">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+            
+            <h1>Verify Your Email</h1>
+            <p class="verification-instruction">
+                We've sent a 6-digit verification code to<br />
+                <strong>@Model.Email</strong>
+            </p>
+
+            <form asp-controller="Booking" asp-action="Verify" method="post" class="verification-form">
+                <input type="hidden" asp-for="Email" />
+                
+                <div class="form-group">
+                    <label asp-for="VerificationCode">Enter 6-Digit Code</label>
+                    <input type="text" asp-for="VerificationCode" class="code-input" 
+                           maxlength="6" pattern="[0-9]{6}" inputmode="numeric"
+                           placeholder="000000" autofocus required />
+                    <span asp-validation-for="VerificationCode" class="validation-error"></span>
+                </div>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        @Html.ValidationSummary(false, "", new { @class = "validation-summary" })
+                    </div>
+                }
+
+                <button type="submit" class="btn btn-primary btn-block btn-large">
+                    <i class="fas fa-check-circle"></i> Verify & Complete Booking
+                </button>
+            </form>
+
+            <div class="verification-help">
+                <p>Didn't receive the code?</p>
+                <button type="button" class="btn-text" onclick="resendCode()">
+                    <i class="fas fa-redo"></i> Resend Code
+                </button>
+                <p class="help-note">The code will expire in 15 minutes</p>
+            </div>
+
+            <div class="security-note">
+                <i class="fas fa-shield-alt"></i>
+                <p>This verification helps us confirm your email address and secure your reservation.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Auto-format code input
+        const codeInput = document.querySelector('.code-input');
+        
+        codeInput.addEventListener('input', function(e) {
+            // Only allow numbers
+            this.value = this.value.replace(/[^0-9]/g, '');
+            
+            // Auto-submit when 6 digits entered
+            if (this.value.length === 6) {
+                // Optional: auto-submit
+                // this.form.submit();
+            }
+        });
+
+        // Paste support
+        codeInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            const numbers = pastedText.replace(/[^0-9]/g, '').substring(0, 6);
+            this.value = numbers;
+            
+            if (numbers.length === 6) {
+                // Optional: auto-submit
+                // this.form.submit();
+            }
+        });
+
+        function resendCode() {
+            // Show loading state
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            btn.disabled = true;
+
+            // Simulate resend (implement actual endpoint)
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-check"></i> Code Sent!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            }, 1500);
+
+            // In production, call your resend endpoint:
+            // fetch('/Booking/ResendVerificationCode', { method: 'POST' })
+            //     .then(response => response.json())
+            //     .then(data => { ... });
+        }
+
+        // Auto-focus on page load
+        window.addEventListener('load', function() {
+            codeInput.focus();
+        });
+    </script>
+}
+
+<style>
+.verification-page {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.verification-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 3rem;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideUp 0.5s ease-out;
+}
+
+@@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.verification-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    margin: 0 auto 2rem;
+    box-shadow: 0 8px 24px rgba(218, 55, 67, 0.3);
+}
+
+.verification-card h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.verification-instruction {
+    color: var(--text-light);
+    margin-bottom: 2rem;
+    line-height: 1.8;
+}
+
+.verification-instruction strong {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.verification-form {
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+    text-align: left;
+}
+
+.code-input {
+    width: 100%;
+    padding: 1.25rem;
+    font-size: 2.5rem;
+    text-align: center;
+    letter-spacing: 1rem;
+    border: 3px solid var(--border-color);
+    border-radius: var(--radius);
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    transition: var(--transition);
+}
+
+.code-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(218, 55, 67, 0.1);
+}
+
+.code-input::placeholder {
+    color: #d8d9db;
+    letter-spacing: 1rem;
+}
+
+.validation-error {
+    display: block;
+    color: var(--error-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    text-align: left;
+}
+
+.alert-error {
+    background: #fee;
+    border: 1px solid var(--error-color);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--error-color);
+}
+
+.btn-large {
+    padding: 1.25rem 2rem;
+    font-size: 1.125rem;
+    width: 100%;
+}
+
+.verification-help {
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.verification-help p {
+    margin-bottom: 0.75rem;
+    color: var(--text-light);
+}
+
+.help-note {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    margin-top: 0.5rem;
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    transition: var(--transition);
+    border-radius: var(--radius);
+}
+
+.btn-text:hover {
+    background: rgba(218, 55, 67, 0.1);
+}
+
+.btn-text:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.security-note {
+    display: flex;
+    align-items: start;
+    gap: 0.75rem;
+    background: var(--bg-light);
+    padding: 1rem;
+    border-radius: var(--radius);
+    text-align: left;
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.security-note i {
+    color: var(--success-color);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+@@media (max-width: 768px) {
+    .verification-card {
+        padding: 2rem;
+    }
+
+    .verification-card h1 {
+        font-size: 1.5rem;
+    }
+
+    .code-input {
+        font-size: 2rem;
+        letter-spacing: 0.5rem;
+    }
+
+    .verification-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 2.5rem;
+    }
+}
+</style>

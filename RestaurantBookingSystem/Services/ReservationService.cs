@@ -125,7 +125,7 @@ namespace RestaurantBookingSystem.Services
                 .Where(t => t.SeatingCapacity >= model.PartySize 
                     && t.IsAvailable 
                     && !bookedTableIds.Contains(t.Id)
-                    && t.Location == model.PreferredLocation)
+                    && t.Location.ToString() == model.PreferredLocation)
                 .OrderBy(t => t.SeatingCapacity)
                 .FirstOrDefault();
 
@@ -150,11 +150,11 @@ namespace RestaurantBookingSystem.Services
                 RestaurantId = model.RestaurantId,
                 TableId = availableTable.Id,
                 ReservationDate = model.Date.Date,
-                ReservationTime = model.Time,
+                ReservationTime = model.Time.ToTimeSpan(),
                 StartTime = slotStart,
                 EndTime = slotEnd,
                 NumberOfGuests = model.PartySize,
-                PreferredTableLocation = model.PreferredLocation,
+                PreferredTableLocation = Enum.Parse<TableLocation>(model.PreferredLocation),
                 OccasionId = model.OccasionId,
                 SpecialRequests = model.SpecialRequests,
                 Status = ReservationStatus.Confirmed,

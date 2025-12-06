@@ -1,0 +1,572 @@
+@model RestaurantBookingSystem.ViewModels.BookingSuccessViewModel
+@{
+    ViewData["Title"] = "Booking Confirmed!";
+}
+
+<div class="success-page">
+    <div class="container">
+        <div class="success-card">
+            <!-- Success Animation -->
+            <div class="success-checkmark">
+                <div class="check-icon">
+                    <span class="icon-line line-tip"></span>
+                    <span class="icon-line line-long"></span>
+                    <div class="icon-circle"></div>
+                    <div class="icon-fix"></div>
+                </div>
+            </div>
+
+            <h1>Booking Confirmed!</h1>
+            <p class="success-message">
+                Your reservation has been successfully confirmed.<br />
+                We've sent a confirmation email to <strong>@Model.Customer.Email</strong>
+            </p>
+
+            <!-- Booking Reference -->
+            <div class="reference-box">
+                <div class="reference-label">Booking Reference</div>
+                <div class="reference-number">@Model.Reservation.BookingReference</div>
+                <button type="button" class="btn-copy" onclick="copyReference()">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
+
+            <!-- Reservation Details -->
+            <div class="details-card">
+                <h2>Reservation Details</h2>
+                
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Restaurant</div>
+                            <div class="detail-value">@Model.Restaurant.Name</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Date</div>
+                            <div class="detail-value">@Model.Reservation.ReservationDate.ToString("dddd, MMMM dd, yyyy")</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Time</div>
+                            <div class="detail-value">@Model.Reservation.ReservationTime.ToString("h:mm tt")</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Party Size</div>
+                            <div class="detail-value">@Model.Reservation.NumberOfGuests @(Model.Reservation.NumberOfGuests == 1 ? "Guest" : "Guests")</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-chair"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Table</div>
+                            <div class="detail-value">Table @Model.Reservation.Table.TableNumber (@Model.Reservation.Table.Location)</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Guest Name</div>
+                            <div class="detail-value">@Model.Customer.FirstName @Model.Customer.LastName</div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Reservation.SpecialRequests))
+                {
+                    <div class="special-requests">
+                        <div class="detail-label"><i class="fas fa-comment"></i> Special Requests</div>
+                        <p>@Model.Reservation.SpecialRequests</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Restaurant Info -->
+            <div class="restaurant-info">
+                <h3>Restaurant Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            @Model.Restaurant.AddressLine1<br />
+                            @if (!string.IsNullOrEmpty(Model.Restaurant.AddressLine2))
+                            {
+                                @Model.Restaurant.AddressLine2<br />
+                            }
+                            @Model.Restaurant.City, @Model.Restaurant.Area @Model.Restaurant.PostalCode
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <a href="tel:@Model.Restaurant.PhoneNumber">@Model.Restaurant.PhoneNumber</a>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Restaurant.Email))
+                    {
+                        <div class="info-item">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <a href="mailto:@Model.Restaurant.Email">@Model.Restaurant.Email</a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="@Model.MapUrl" target="_blank" class="btn btn-outline">
+                    <i class="fas fa-map-marked-alt"></i> Get Directions
+                </a>
+                <button type="button" class="btn btn-outline" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print Confirmation
+                </button>
+                <button type="button" class="btn btn-outline" onclick="addToCalendar()">
+                    <i class="fas fa-calendar-plus"></i> Add to Calendar
+                </button>
+            </div>
+
+            <!-- Important Information -->
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <strong>Cancellation Policy:</strong> You can cancel your reservation up to @Model.Restaurant.CancellationPolicyHours hours before your booking time.
+                </div>
+            </div>
+
+            <!-- Primary Action -->
+            <div class="primary-actions">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary btn-large">
+                    <i class="fas fa-home"></i> Return to Home
+                </a>
+                <a asp-controller="Booking" asp-action="MyReservations" class="btn btn-outline btn-large">
+                    <i class="fas fa-list"></i> View My Reservations
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyReference() {
+            const reference = '@Model.Reservation.BookingReference';
+            navigator.clipboard.writeText(reference).then(() => {
+                const btn = event.target.closest('.btn-copy');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                btn.style.background = 'var(--success-color)';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.style.background = '';
+                }, 2000);
+            });
+        }
+
+        function addToCalendar() {
+            const title = 'Dinner at @Model.Restaurant.Name';
+            const description = 'Reservation for @Model.Reservation.NumberOfGuests guests\nBooking Reference: @Model.Reservation.BookingReference';
+            const location = '@Model.Restaurant.AddressLine1, @Model.Restaurant.City';
+            const startDate = '@Model.Reservation.StartTime.ToString("yyyyMMddTHHmmss")';
+            const endDate = '@Model.Reservation.EndTime.ToString("yyyyMMddTHHmmss")';
+            
+            const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startDate}/${endDate}&details=${encodeURIComponent(description)}&location=${encodeURIComponent(location)}`;
+            
+            window.open(url, '_blank');
+        }
+
+        // Success animation on load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                document.querySelector('.success-checkmark').classList.add('animate');
+            }, 200);
+        });
+    </script>
+}
+
+<style>
+.success-page {
+    min-height: calc(100vh - 200px);
+    padding: 3rem 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.success-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 3rem;
+    max-width: 800px;
+    margin: 0 auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+/* Success Checkmark Animation */
+.success-checkmark {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+}
+
+.check-icon {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    border-radius: 50%;
+    box-sizing: content-box;
+    border: 4px solid var(--success-color);
+}
+
+.check-icon::before {
+    top: 3px;
+    left: -2px;
+    width: 30px;
+    transform-origin: 100% 50%;
+    border-radius: 100px 0 0 100px;
+}
+
+.check-icon::after {
+    top: 0;
+    left: 30px;
+    width: 60px;
+    transform-origin: 0 50%;
+    border-radius: 0 100px 100px 0;
+    animation: rotate-circle 4.25s ease-in;
+}
+
+.icon-line {
+    height: 5px;
+    background-color: var(--success-color);
+    display: block;
+    border-radius: 2px;
+    position: absolute;
+    z-index: 10;
+}
+
+.icon-line.line-tip {
+    top: 56px;
+    left: 20px;
+    width: 25px;
+    transform: rotate(45deg);
+    animation: icon-line-tip 0.75s;
+}
+
+.icon-line.line-long {
+    top: 50px;
+    right: 12px;
+    width: 47px;
+    transform: rotate(-45deg);
+    animation: icon-line-long 0.75s;
+}
+
+.icon-circle {
+    top: -4px;
+    left: -4px;
+    z-index: 10;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    position: absolute;
+    box-sizing: content-box;
+    border: 4px solid rgba(76, 175, 80, .5);
+}
+
+.icon-fix {
+    top: 8px;
+    width: 5px;
+    left: 31px;
+    z-index: 1;
+    height: 85px;
+    position: absolute;
+    transform: rotate(-45deg);
+    background-color: var(--white);
+}
+
+@@keyframes rotate-circle {
+    0% { transform: rotate(-45deg); }
+    5% { transform: rotate(-45deg); }
+    12% { transform: rotate(-405deg); }
+    100% { transform: rotate(-405deg); }
+}
+
+@@keyframes icon-line-tip {
+    0% { width: 0; left: 1px; top: 19px; }
+    54% { width: 0; left: 1px; top: 19px; }
+    70% { width: 50px; left: -8px; top: 37px; }
+    84% { width: 17px; left: 21px; top: 48px; }
+    100% { width: 25px; left: 20px; top: 56px; }
+}
+
+@@keyframes icon-line-long {
+    0% { width: 0; right: 46px; top: 54px; }
+    65% { width: 0; right: 46px; top: 54px; }
+    84% { width: 55px; right: 0px; top: 35px; }
+    100% { width: 47px; right: 12px; top: 50px; }
+}
+
+.success-card h1 {
+    font-size: 2.5rem;
+    color: var(--success-color);
+    margin-bottom: 1rem;
+}
+
+.success-message {
+    color: var(--text-light);
+    margin-bottom: 2rem;
+    line-height: 1.8;
+}
+
+.success-message strong {
+    color: var(--text-color);
+}
+
+/* Reference Box */
+.reference-box {
+    background: linear-gradient(135deg, var(--success-color) 0%, #1e7e34 100%);
+    color: var(--white);
+    padding: 2rem;
+    border-radius: var(--radius);
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.reference-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.reference-number {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+}
+
+.btn-copy {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: var(--white);
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.btn-copy:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Details Card */
+.details-card {
+    background: var(--bg-light);
+    padding: 2rem;
+    border-radius: var(--radius);
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.details-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.detail-item {
+    display: flex;
+    gap: 1rem;
+    align-items: start;
+}
+
+.detail-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.detail-content {
+    flex: 1;
+}
+
+.detail-label {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+}
+
+.detail-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.special-requests {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.special-requests p {
+    margin-top: 0.5rem;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+/* Restaurant Info */
+.restaurant-info {
+    background: var(--white);
+    border: 2px solid var(--border-color);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.restaurant-info h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    gap: 1rem;
+    align-items: start;
+}
+
+.info-item i {
+    color: var(--primary-color);
+    font-size: 1.25rem;
+    width: 24px;
+    flex-shrink: 0;
+}
+
+.info-item a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.info-item a:hover {
+    text-decoration: underline;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.info-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius);
+    display: flex;
+    gap: 1rem;
+    align-items: start;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.info-box i {
+    color: #ffc107;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.primary-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+}
+
+@@media print {
+    .action-buttons,
+    .primary-actions {
+        display: none;
+    }
+}
+
+@@media (max-width: 768px) {
+    .success-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .success-card h1 {
+        font-size: 2rem;
+    }
+
+    .reference-number {
+        font-size: 1.5rem;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .primary-actions {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

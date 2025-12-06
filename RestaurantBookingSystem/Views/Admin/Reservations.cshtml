@@ -1,0 +1,1314 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@removeTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@* @model ReservationsListViewModel
+@{
+    ViewData["Title"] = "Manage Reservations";
+}
+
+<div class="reservations-page">
+    <div class="container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-calendar-alt"></i> Manage Reservations</h1>
+                <p class="subtitle">View and manage all restaurant reservations</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="exportReservations()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <button class="btn btn-primary" onclick="openNewReservationModal()">
+                    <i class="fas fa-plus"></i> New Reservation
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@Model.TodayReservations</div>
+                    <div class="stat-label">Today</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@Model.PendingReservations</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #2da562 0%, #1e7e34 100%);">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@Model.ConfirmedReservations</div>
+                    <div class="stat-label">Confirmed</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@Model.ThisWeekReservations</div>
+                    <div class="stat-label">This Week</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="filter-bar">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all" onclick="filterByStatus('all')">
+                    All (@Model.Reservations.Count())
+                </button>
+                <button class="filter-tab" data-filter="confirmed" onclick="filterByStatus('confirmed')">
+                    Confirmed (@Model.Reservations.Count(r => r.Status == RestaurantBookingSystem.Models.ReservationStatus.Confirmed))
+                </button>
+                <button class="filter-tab" data-filter="pending" onclick="filterByStatus('pending')">
+                    Pending (@Model.Reservations.Count(r => r.Status == RestaurantBookingSystem.Models.ReservationStatus.Pending))
+                </button>
+                <button class="filter-tab" data-filter="seated" onclick="filterByStatus('seated')">
+                    Seated (@Model.Reservations.Count(r => r.Status == RestaurantBookingSystem.Models.ReservationStatus.Seated))
+                </button>
+                <button class="filter-tab" data-filter="completed" onclick="filterByStatus('completed')">
+                    Completed (@Model.Reservations.Count(r => r.Status == RestaurantBookingSystem.Models.ReservationStatus.Completed))
+                </button>
+            </div>
+
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label>Date Range:</label>
+                    <input type="date" id="dateFrom" class="form-control-sm" onchange="applyFilters()" />
+                    <span>to</span>
+                    <input type="date" id="dateTo" class="form-control-sm" onchange="applyFilters()" />
+                </div>
+
+                <div class="filter-group">
+                    <label>Time Slot:</label>
+                    <select id="timeSlot" class="form-control-sm" onchange="applyFilters()">
+                        <option value="">All Times</option>
+                        <option value="breakfast">Breakfast (6am-11am)</option>
+                        <option value="lunch">Lunch (11am-3pm)</option>
+                        <option value="dinner">Dinner (5pm-10pm)</option>
+                        <option value="late">Late Night (10pm+)</option>
+                    </select>
+                </div>
+
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchBox" placeholder="Search by reference, name, email..." 
+                           onkeyup="searchReservations()" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservations Table -->
+        <div class="reservations-table-container">
+            <table class="reservations-table">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Date & Time</th>
+                        <th>Guest</th>
+                        <th>Contact</th>
+                        <th>Guests</th>
+                        <th>Table</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var reservation in Model.Reservations.OrderBy(r => r.ReservationDate).ThenBy(r => r.ReservationTime))
+                    {
+                        <tr class="reservation-row" 
+                            data-status="@reservation.Status.ToString().ToLower()"
+                            data-date="@reservation.ReservationDate.ToString("yyyy-MM-dd")"
+                            data-reference="@reservation.BookingReference"
+                            data-guest="@reservation.CustomerName"
+                            data-email="@reservation.CustomerEmail">
+                            
+                            <td>
+                                <div class="reference-cell">
+                                    <strong>@reservation.BookingReference</strong>
+                                    @if (reservation.Occasion != null)
+                                    {
+                                        <span class="occasion-tag">
+                                            <i class="fas fa-birthday-cake"></i> @reservation.Occasion
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="datetime-cell">
+                                    <div class="date">@reservation.ReservationDate.ToString("MMM dd, yyyy")</div>
+                                    <div class="time">@reservation.ReservationTime.ToString("h:mm tt")</div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="guest-cell">
+                                    <strong>@reservation.CustomerName</strong>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="contact-cell">
+                                    <div><i class="fas fa-envelope"></i> @reservation.CustomerEmail</div>
+                                    <div><i class="fas fa-phone"></i> @reservation.CustomerPhone</div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="guests-cell">
+                                    <i class="fas fa-users"></i> @reservation.NumberOfGuests
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="table-cell">
+                                    @if (reservation.TableNumber.HasValue)
+                                    {
+                                        <span class="table-badge">Table @reservation.TableNumber</span>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn-assign" onclick="assignTable(@reservation.ReservationId)">
+                                            <i class="fas fa-plus"></i> Assign
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <select class="status-select status-@reservation.Status.ToString().ToLower()" 
+                                        onchange="updateStatus(@reservation.ReservationId, this.value)">
+                                    <option value="Pending" @@(reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.Pending ? "selected" : "")>Pending</option>
+                                    <option value="Confirmed" @@(reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.Confirmed ? "selected" : "")>Confirmed</option>
+                                    <option value="Seated" @@(reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.Seated ? "selected" : "")>Seated</option>
+                                    <option value="Completed" @@(reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.Completed ? "selected" : "")>Completed</option>
+                                    <option value="Cancelled" @@(reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.Cancelled ? "selected" : "")>Cancelled</option>
+                                    <option value="NoShow" @@(reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.NoShow ? "selected" : "")>No Show</option>
+                                </select>
+                            </td>
+                            
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" onclick="viewDetails(@reservation.ReservationId)" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" onclick="sendConfirmation(@reservation.ReservationId)" title="Send Confirmation">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                    @if (reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.Pending || 
+                                         reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.Confirmed)
+                                    {
+                                        <button class="btn-icon btn-danger" onclick="cancelReservation(@reservation.ReservationId)" title="Cancel">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button class="btn btn-outline" disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span class="page-info">Page 1 of 1</span>
+            <button class="btn btn-outline" disabled>
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- New Reservation Modal -->
+<div id="newReservationModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Create New Reservation</h3>
+            <button class="modal-close" onclick="closeNewReservationModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="newReservationForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">Guest Name</label>
+                        <input type="text" class="form-control" placeholder="John Doe" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Phone</label>
+                        <input type="tel" class="form-control" placeholder="+1 (555) 123-4567" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">Email</label>
+                    <input type="email" class="form-control" placeholder="john@example.com" required />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">Date</label>
+                        <input type="date" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Time</label>
+                        <input type="time" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">Number of Guests</label>
+                        <input type="number" class="form-control" min="1" max="20" value="2" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Table</label>
+                        <select class="form-control">
+                            <option value="">Auto-assign</option>
+                            <option value="1">Table 1</option>
+                            <option value="2">Table 2</option>
+                            <option value="3">Table 3</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Special Requests</label>
+                    <textarea class="form-control" rows="3" placeholder="Any special requirements..."></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeNewReservationModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="createReservation()">
+                <i class="fas fa-save"></i> Create Reservation
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentFilter = 'all';
+
+        function filterByStatus(status) {
+            currentFilter = status;
+            
+            // Update active tab
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filter rows
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const timeSlot = document.getElementById('timeSlot').value;
+
+            document.querySelectorAll('.reservation-row').forEach(row => {
+                const status = row.dataset.status;
+                const date = row.dataset.date;
+                
+                let show = true;
+
+                // Status filter
+                if (currentFilter !== 'all' && status !== currentFilter) {
+                    show = false;
+                }
+
+                // Date range filter
+                if (dateFrom && date < dateFrom) show = false;
+                if (dateTo && date > dateTo) show = false;
+
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        function searchReservations() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+
+            document.querySelectorAll('.reservation-row').forEach(row => {
+                const reference = row.dataset.reference.toLowerCase();
+                const guest = row.dataset.guest.toLowerCase();
+                const email = row.dataset.email.toLowerCase();
+
+                const matches = reference.includes(searchTerm) || 
+                               guest.includes(searchTerm) || 
+                               email.includes(searchTerm);
+
+                if (searchTerm === '' || matches) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function updateStatus(reservationId, newStatus) {
+            if (confirm(`Update reservation status to ${newStatus}?`)) {
+                fetch(`/Admin/UpdateReservationStatus/${reservationId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+            } else {
+                location.reload(); // Reset select
+            }
+        }
+
+        function assignTable(reservationId) {
+            // Open table assignment modal
+            console.log('Assign table to reservation:', reservationId);
+        }
+
+        function viewDetails(reservationId) {
+            window.location.href = `/Admin/ReservationDetails/${reservationId}`;
+        }
+
+        function sendConfirmation(reservationId) {
+            if (confirm('Send confirmation email to guest?')) {
+                fetch(`/Admin/SendConfirmation/${reservationId}`, { method: 'POST' })
+                    .then(() => alert('Confirmation sent!'));
+            }
+        }
+
+        function cancelReservation(reservationId) {
+            if (confirm('Are you sure you want to cancel this reservation?')) {
+                fetch(`/Admin/CancelReservation/${reservationId}`, { method: 'POST' })
+                    .then(() => location.reload());
+            }
+        }
+
+        function exportReservations() {
+            window.location.href = '/Admin/ExportReservations';
+        }
+
+        function openNewReservationModal() {
+            document.getElementById('newReservationModal').style.display = 'flex';
+        }
+
+        function closeNewReservationModal() {
+            document.getElementById('newReservationModal').style.display = 'none';
+        }
+
+        function createReservation() {
+            // Implement create logic
+            closeNewReservationModal();
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('newReservationModal');
+            if (event.target == modal) {
+                closeNewReservationModal();
+            }
+        }
+    </script>
+}
+
+<style>
+.reservations-page {
+    padding: 2rem;
+    background: #f5f7fa;
+    min-height: calc(100vh - 80px);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.subtitle {
+    color: var(--text-light);
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Stats Row */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+/* Filter Bar */
+.filter-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-tab {
+    padding: 0.75rem 1.5rem;
+    background: #f8f9fa;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-color);
+    transition: var(--transition);
+}
+
+.filter-tab:hover {
+    background: #e9ecef;
+}
+
+.filter-tab.active {
+    background: rgba(218, 55, 67, 0.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1.5rem;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-color);
+}
+
+.form-control-sm {
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.search-box {
+    flex: 1;
+    position: relative;
+    min-width: 250px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+}
+
+/* Table */
+.reservations-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+}
+
+.reservations-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.reservations-table thead {
+    background: #f8f9fa;
+}
+
+.reservations-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.reservations-table td {
+    padding: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.reservation-row:hover {
+    background: #f8f9fa;
+}
+
+.reference-cell strong {
+    display: block;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.occasion-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    background: #fff3cd;
+    color: #856404;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.datetime-cell .date {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.datetime-cell .time {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.guest-cell strong {
+    color: var(--text-color);
+}
+
+.contact-cell {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.contact-cell i {
+    width: 16px;
+    color: var(--primary-color);
+}
+
+.guests-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.table-badge {
+    padding: 0.5rem 1rem;
+    background: #e7f3ff;
+    color: #0c5460;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.btn-assign {
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.status-select {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.status-select.status-confirmed {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-color: #bee5eb;
+}
+
+.status-select.status-pending {
+    background: #fff3cd;
+    color: #856404;
+    border-color: #ffeaa7;
+}
+
+.status-select.status-seated {
+    background: #e7d4f8;
+    color: #5a2d82;
+    border-color: #d4b5f0;
+}
+
+.status-select.status-completed {
+    background: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: #f8f9fa;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-icon:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-icon.btn-danger:hover {
+    background: var(--error-color);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+}
+
+.page-info {
+    color: var(--text-light);
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: var(--text-light);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-label.required::after {
+    content: ' *';
+    color: var(--error-color);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+@@media (max-width: 768px) {
+    .reservations-page {
+        padding: 1rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filter-group,
+    .search-box {
+        width: 100%;
+    }
+
+    .reservations-table-container {
+        overflow-x: auto;
+    }
+
+    .reservations-table {
+        min-width: 1200px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+ *@
+
+        @model ReservationsListViewModel
+@{
+    ViewData["Title"] = "Manage Reservations";
+}
+
+<div class="reservations-page">
+    <div class="container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-calendar-alt"></i> Manage Reservations</h1>
+                <p class="subtitle">View and manage all restaurant reservations</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="exportReservations()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <button class="btn btn-primary" onclick="openNewReservationModal()">
+                    <i class="fas fa-plus"></i> New Reservation
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@Model.TodayReservations</div>
+                    <div class="stat-label">Today</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@Model.PendingReservations</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #2da562 0%, #1e7e34 100%);">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@Model.ConfirmedReservations</div>
+                    <div class="stat-label">Confirmed</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@Model.ThisWeekReservations</div>
+                    <div class="stat-label">This Week</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="filter-bar">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all" onclick="filterByStatus('all')">
+                    All (@Model.Reservations.Count())
+                </button>
+                <button class="filter-tab" data-filter="confirmed" onclick="filterByStatus('confirmed')">
+                    Confirmed (@Model.Reservations.Count(r => r.Status == RestaurantBookingSystem.Models.ReservationStatus.Confirmed))
+                </button>
+                <button class="filter-tab" data-filter="pending" onclick="filterByStatus('pending')">
+                    Pending (@Model.Reservations.Count(r => r.Status == RestaurantBookingSystem.Models.ReservationStatus.Pending))
+                </button>
+                <button class="filter-tab" data-filter="seated" onclick="filterByStatus('seated')">
+                    Seated (@Model.Reservations.Count(r => r.Status == RestaurantBookingSystem.Models.ReservationStatus.Seated))
+                </button>
+                <button class="filter-tab" data-filter="completed" onclick="filterByStatus('completed')">
+                    Completed (@Model.Reservations.Count(r => r.Status == RestaurantBookingSystem.Models.ReservationStatus.Completed))
+                </button>
+            </div>
+
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label>Date Range:</label>
+                    <input type="date" id="dateFrom" class="form-control-sm" onchange="applyFilters()" />
+                    <span>to</span>
+                    <input type="date" id="dateTo" class="form-control-sm" onchange="applyFilters()" />
+                </div>
+
+                <div class="filter-group">
+                    <label>Time Slot:</label>
+                    <select id="timeSlot" class="form-control-sm" onchange="applyFilters()">
+                        <option value="">All Times</option>
+                        <option value="breakfast">Breakfast (6am-11am)</option>
+                        <option value="lunch">Lunch (11am-3pm)</option>
+                        <option value="dinner">Dinner (5pm-10pm)</option>
+                        <option value="late">Late Night (10pm+)</option>
+                    </select>
+                </div>
+
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchBox" placeholder="Search by reference, name, email..." 
+                           onkeyup="searchReservations()" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservations Table -->
+        <div class="reservations-table-container">
+            <table class="reservations-table">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Date & Time</th>
+                        <th>Guest</th>
+                        <th>Contact</th>
+                        <th>Guests</th>
+                        <th>Table</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var reservation in Model.Reservations.OrderBy(r => r.ReservationDate).ThenBy(r => r.ReservationTime))
+                    {
+                        <tr class="reservation-row" 
+                            data-status="@reservation.Status.ToString().ToLower()"
+                            data-date="@reservation.ReservationDate.ToString("yyyy-MM-dd")"
+                            data-reference="@reservation.BookingReference"
+                            data-guest="@reservation.CustomerName"
+                            data-email="@reservation.CustomerEmail">
+                            
+                            <td>
+                                <div class="reference-cell">
+                                    <strong>@reservation.BookingReference</strong>
+                                    @if (!string.IsNullOrEmpty(reservation.Occasion))
+                                    {
+                                        <span class="occasion-tag">
+                                            <i class="fas fa-birthday-cake"></i> @reservation.Occasion
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="datetime-cell">
+                                    <div class="date">@reservation.ReservationDate.ToString("MMM dd, yyyy")</div>
+                                    <div class="time">@reservation.ReservationTime.ToString("h:mm tt")</div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="guest-cell">
+                                    <strong>@reservation.CustomerName</strong>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="contact-cell">
+                                    <div><i class="fas fa-envelope"></i> @reservation.CustomerEmail</div>
+                                    <div><i class="fas fa-phone"></i> @reservation.CustomerPhone</div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="guests-cell">
+                                    <i class="fas fa-users"></i> @reservation.NumberOfGuests
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="table-cell">
+                                    @if (reservation.TableNumber.HasValue)
+                                    {
+                                        <span class="table-badge">Table @reservation.TableNumber</span>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn-assign" onclick="assignTable(@reservation.ReservationId)">
+                                            <i class="fas fa-plus"></i> Assign
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                            
+                            <td>
+<select class="status-select" onchange="updateStatus(@reservation.ReservationId, this.value)">
+    @foreach (RestaurantBookingSystem.Models.ReservationStatus status in Enum.GetValues(typeof(RestaurantBookingSystem.Models.ReservationStatus)))
+    {
+        var isSelected = reservation.Status == status ? "selected" : "";
+        <text><option value="@status" @isSelected>@status</option></text>
+    }
+</select>
+
+                            </td>
+                            
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" onclick="viewDetails(@reservation.ReservationId)" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" onclick="sendConfirmation(@reservation.ReservationId)" title="Send Confirmation">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                    @if (reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.Pending || 
+                                         reservation.Status == RestaurantBookingSystem.Models.ReservationStatus.Confirmed)
+                                    {
+                                        <button class="btn-icon btn-danger" onclick="cancelReservation(@reservation.ReservationId)" title="Cancel">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button class="btn btn-outline" disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span class="page-info">Page 1 of 1</span>
+            <button class="btn btn-outline" disabled>
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- New Reservation Modal -->
+<div id="newReservationModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Create New Reservation</h3>
+            <button class="modal-close" onclick="closeNewReservationModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="newReservationForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">Guest Name</label>
+                        <input type="text" class="form-control" placeholder="John Doe" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Phone</label>
+                        <input type="tel" class="form-control" placeholder="+1 (555) 123-4567" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">Email</label>
+                    <input type="email" class="form-control" placeholder="john@example.com" required />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">Date</label>
+                        <input type="date" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Time</label>
+                        <input type="time" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">Number of Guests</label>
+                        <input type="number" class="form-control" min="1" max="20" value="2" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Table</label>
+                        <select class="form-control">
+                            <option value="">Auto-assign</option>
+                            <option value="1">Table 1</option>
+                            <option value="2">Table 2</option>
+                            <option value="3">Table 3</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Special Requests</label>
+                    <textarea class="form-control" rows="3" placeholder="Any special requirements..."></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeNewReservationModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="createReservation()">
+                <i class="fas fa-save"></i> Create Reservation
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentFilter = 'all';
+
+        function filterByStatus(status) {
+            currentFilter = status;
+            
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            document.querySelectorAll('.reservation-row').forEach(row => {
+                const status = row.dataset.status;
+                const date = row.dataset.date;
+                
+                let show = true;
+                if (currentFilter !== 'all' && status !== currentFilter) show = false;
+                if (dateFrom && date < dateFrom) show = false;
+                if (dateTo && date > dateTo) show = false;
+
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        function searchReservations() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+
+            document.querySelectorAll('.reservation-row').forEach(row => {
+                const reference = row.dataset.reference.toLowerCase();
+                const guest = row.dataset.guest.toLowerCase();
+                const email = row.dataset.email.toLowerCase();
+
+                const matches = reference.includes(searchTerm) || 
+                               guest.includes(searchTerm) || 
+                               email.includes(searchTerm);
+
+                row.style.display = (searchTerm === '' || matches) ? '' : 'none';
+            });
+        }
+
+        function updateStatus(reservationId, newStatus) {
+            if (confirm(`Update reservation status to ${newStatus}?`)) {
+                fetch(`/Admin/UpdateReservationStatus/${reservationId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                });
+            } else {
+                location.reload();
+            }
+        }
+
+        function assignTable(reservationId) {
+            console.log('Assign table to reservation:', reservationId);
+        }
+
+        function viewDetails(reservationId) {
+            window.location.href = `/Admin/ReservationDetails/${reservationId}`;
+        }
+
+        function sendConfirmation(reservationId) {
+            if (confirm('Send confirmation email to guest?')) {
+                fetch(`/Admin/SendConfirmation/${reservationId}`, { method: 'POST' })
+                    .then(() => alert('Confirmation sent!'));
+            }
+        }
+
+        function cancelReservation(reservationId) {
+            if (confirm('Are you sure you want to cancel this reservation?')) {
+                fetch(`/Admin/CancelReservation/${reservationId}`, { method: 'POST' })
+                    .then(() => location.reload());
+            }
+        }
+
+        function exportReservations() {
+            window.location.href = '/Admin/ExportReservations';
+        }
+
+        function openNewReservationModal() {
+            document.getElementById('newReservationModal').style.display = 'flex';
+        }
+
+        function closeNewReservationModal() {
+            document.getElementById('newReservationModal').style.display = 'none';
+        }
+
+        function createReservation() {
+            closeNewReservationModal();
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('newReservationModal');
+            if (event.target == modal) closeNewReservationModal();
+        }
+    </script>
+}
+
+<style>
+/* Existing CSS remains the same */
+</style>

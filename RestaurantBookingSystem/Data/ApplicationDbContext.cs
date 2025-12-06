@@ -93,7 +93,7 @@ namespace RestaurantBookingSystem.Data
             // Customer configuration
             modelBuilder.Entity<Customer>(entity =>
             {
-                entity.HasKey(e => e.Id);
+                entity.HasKey(e => e.CustomerId);
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.HasIndex(e => e.PhoneNumber);
             });
@@ -129,7 +129,7 @@ namespace RestaurantBookingSystem.Data
             // Favorite Restaurant configuration
             modelBuilder.Entity<FavoriteRestaurant>(entity =>
             {
-                entity.HasKey(e => e.Id);
+                entity.HasKey(e => e.FavoriteId);
                 entity.HasIndex(e => new { e.CustomerId, e.RestaurantId }).IsUnique();
             });
 

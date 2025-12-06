@@ -12,12 +12,13 @@ namespace RestaurantBookingSystem.Models
         public int CustomerId { get; set; }
         
         public int RestaurantId { get; set; }
+        public int ReservationId { get; set; }
         
         public int TableId { get; set; }
         
         public DateTime ReservationDate { get; set; }
         
-        public TimeOnly ReservationTime { get; set; }
+        public TimeSpan ReservationTime { get; set; }
         
         public DateTime StartTime { get; set; }
         
@@ -34,7 +35,8 @@ namespace RestaurantBookingSystem.Models
         
         [MaxLength(1000)]
         public string? SpecialRequests { get; set; }
-        
+        //public string? Occasion { get; set; }
+
         [MaxLength(500)]
         public string? CancellationReason { get; set; }
         
@@ -61,13 +63,13 @@ namespace RestaurantBookingSystem.Models
         public ICollection<ReservationMessage> Messages { get; set; }
     }
 
-    public enum ReservationStatus
-    {
-        Pending = 1,
-        Confirmed = 2,
-        Cancelled = 3,
-        NoShow = 4,
-        Completed = 5,
-        Seated = 6
-    }
+    //public enum ReservationStatus
+    //{
+    //    Pending = 1,
+    //    Confirmed = 2,
+    //    Cancelled = 3,
+    //    NoShow = 4,
+    //    Completed = 5,
+    //    Seated = 6
+    //}
 }

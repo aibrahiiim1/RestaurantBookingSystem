@@ -14,8 +14,17 @@ namespace RestaurantBookingSystem.Models
         public TableLocation Location { get; set; }
         
         public bool IsAvailable { get; set; } = true;
+        public bool IsActive { get; set; } = true;
         
         public int RestaurantId { get; set; }
+
+        public string? Shape { get; set; }
+        public int MaxCapacity { get; set; }
+        public int MinCapacity { get; set; }
+        public bool IsWindowSeat { get; set; }
+        public bool IsAccessible { get; set; }
+        public bool IsOutdoor { get; set; }
+        public bool IsPrivate { get; set; }
 
         // Navigation property
         public Restaurant Restaurant { get; set; }

@@ -102,5 +102,10 @@ namespace RestaurantBookingSystem.Models
         public ICollection<SpecialEvent> SpecialEvents { get; set; }
         public ICollection<MenuItem> MenuItems { get; set; }
         public ICollection<Promotion> Promotions { get; set; }
+        //public ICollection<string> AvailableCuisines { get; set; }
+        //public List<string> AvailableCuisines { get; set; } = new List<string>();
+
+        //        public List<string> AvailableCuisines { get; set; } = new List<string>
+        //{ "Italian", "Chinese", "Japanese", "Mexican", "Indian", "Thai", "French", "Mediterranean", "American", "Other" };
     }
 }

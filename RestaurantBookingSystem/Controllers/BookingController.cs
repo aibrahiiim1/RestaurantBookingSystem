@@ -59,7 +59,7 @@ namespace RestaurantBookingSystem.Controllers
             var bookingForm = System.Text.Json.JsonSerializer.Deserialize<BookingFormViewModel>(bookingData);
             var restaurant = await _restaurantService.GetRestaurantByIdAsync(bookingForm.RestaurantId);
 
-            var viewModel = new BookingConfirmationViewModel
+            var viewModel = new BookingFormViewModel
             {
                 RestaurantId = bookingForm.RestaurantId,
                 Date = bookingForm.Date.Value,
@@ -98,7 +98,6 @@ namespace RestaurantBookingSystem.Controllers
                     IsGuest = true,
                     ReceivePromotions = model.ReceivePromotions
                 };
-
                 customer = await _customerService.CreateCustomerAsync(customer);
             }
 
@@ -109,7 +108,7 @@ namespace RestaurantBookingSystem.Controllers
             // Store verification code and booking data in session
             HttpContext.Session.SetString("VerificationCode", verificationCode);
             HttpContext.Session.SetString("VerificationEmail", model.Email);
-            HttpContext.Session.SetInt32("CustomerId", customer.Id);
+            HttpContext.Session.SetInt32("CustomerId", customer.CustomerId);
             HttpContext.Session.SetString("FinalBookingData", System.Text.Json.JsonSerializer.Serialize(model));
 
             return RedirectToAction("Verify");
@@ -132,7 +131,7 @@ namespace RestaurantBookingSystem.Controllers
             var storedCode = HttpContext.Session.GetString("VerificationCode");
             var email = HttpContext.Session.GetString("VerificationEmail");
 
-            if (storedCode != model.VerificationCode || email != model.Email)
+            if (storedCode != model.VerificationCode || email != model.VerificationCode)
             {
                 ModelState.AddModelError("", "Invalid verification code");
                 return View(model);
@@ -155,8 +154,14 @@ namespace RestaurantBookingSystem.Controllers
                 var reservation = await _reservationService.CreateReservationAsync(bookingModel, customerId.Value);
 
                 // Send confirmation email
-                await _emailService.SendBookingConfirmationAsync(reservation);
-
+                //await _emailService.SendBookingConfirmationAsync(reservation);
+                await _emailService.SendBookingConfirmationAsync(
+    reservation.Customer.Email,
+    reservation.BookingReference,
+    reservation.ReservationDate,
+    reservation.ReservationTime,
+    reservation.Restaurant.Name
+);
                 // Clear session
                 HttpContext.Session.Remove("BookingData");
                 HttpContext.Session.Remove("FinalBookingData");
@@ -256,7 +261,12 @@ namespace RestaurantBookingSystem.Controllers
 
             if (success)
             {
-                await _emailService.SendCancellationConfirmationAsync(reservation);
+                //await _emailService.SendCancellationConfirmationAsync(reservation);
+                await _emailService.SendCancellationConfirmationAsync(
+    reservation.Customer.Email,
+    reservation.BookingReference,
+    reservation.Restaurant.Name
+);
                 TempData["Success"] = "Reservation cancelled successfully";
             }
             else

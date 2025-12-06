@@ -1,0 +1,446 @@
+@model RestaurantSearchResultsViewModel
+@{
+    ViewData["Title"] = "Search Results";
+}
+
+<div class="search-results-page">
+    <!-- Search Bar -->
+    <section class="search-header">
+        <div class="container">
+            <form asp-controller="Home" asp-action="Search" method="post" class="search-form-compact">
+                <div class="search-field">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <input type="text" asp-for="Search.Location" placeholder="Location" class="search-input" />
+                </div>
+                <div class="search-field">
+                    <i class="fas fa-calendar"></i>
+                    <input type="date" asp-for="Search.Date" class="search-input" />
+                </div>
+                <div class="search-field">
+                    <i class="fas fa-clock"></i>
+                    <input type="time" asp-for="Search.Time" class="search-input" />
+                </div>
+                <div class="search-field">
+                    <i class="fas fa-users"></i>
+                    <select asp-for="Search.PartySize" class="search-input">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            <option value="@i">@i @(i == 1 ? "person" : "people")</option>
+                        }
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="results-layout">
+            <!-- Filters Sidebar -->
+            <aside class="filters-sidebar">
+                <div class="filter-section">
+                    <h3>Filters</h3>
+                    
+                    <!-- Cuisine Filter -->
+                    <div class="filter-group">
+                        <h4>Cuisine</h4>
+                        <div class="filter-options">
+                            @foreach (var cuisine in ViewBag.Cuisines as List<RestaurantBookingSystem.Models.Cuisine>)
+                            {
+                                <a asp-action="SearchResults" 
+                                   asp-route-cuisine="@cuisine.Name"
+                                   asp-route-location="@Model.Search.Location"
+                                   asp-route-date="@Model.Search.Date"
+                                   asp-route-time="@Model.Search.Time"
+                                   asp-route-partySize="@Model.Search.PartySize"
+                                   class="filter-option @(Model.SelectedCuisine == cuisine.Name ? "active" : "")">
+                                    @cuisine.Name
+                                </a>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Features Filter -->
+                    <div class="filter-group">
+                        <h4>Features</h4>
+                        <div class="filter-options">
+                            <a asp-action="SearchResults" 
+                               asp-route-filter="child-friendly"
+                               asp-all-route-data="@(new Dictionary<string, string> { 
+                                   {"cuisine", Model.SelectedCuisine}, 
+                                   {"location", Model.Search.Location}
+                               })"
+                               class="filter-option @(Model.SelectedFilter == "child-friendly" ? "active" : "")">
+                                <i class="fas fa-child"></i> Child Friendly
+                            </a>
+                            <a asp-action="SearchResults" 
+                               asp-route-filter="outdoor"
+                               class="filter-option @(Model.SelectedFilter == "outdoor" ? "active" : "")">
+                                <i class="fas fa-tree"></i> Outdoor Seating
+                            </a>
+                            <a asp-action="SearchResults" 
+                               asp-route-filter="wheelchair"
+                               class="filter-option @(Model.SelectedFilter == "wheelchair" ? "active" : "")">
+                                <i class="fas fa-wheelchair"></i> Wheelchair Access
+                            </a>
+                            <a asp-action="SearchResults" 
+                               asp-route-filter="bar"
+                               class="filter-option @(Model.SelectedFilter == "bar" ? "active" : "")">
+                                <i class="fas fa-cocktail"></i> Bar Area
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Results Content -->
+            <main class="results-content">
+                <!-- Sort and Results Count -->
+                <div class="results-header">
+                    <div class="results-count">
+                        <h2>@Model.TotalResults restaurants found</h2>
+                    </div>
+                    <div class="sort-options">
+                        <label>Sort by:</label>
+                        <select id="sortSelect" class="sort-select">
+                            <option value="featured" selected="@(Model.SortBy == "featured")">Featured</option>
+                            <option value="rating" selected="@(Model.SortBy == "rating")">Highest Rated</option>
+                            <option value="reviews" selected="@(Model.SortBy == "reviews")">Most Reviewed</option>
+                            <option value="newest" selected="@(Model.SortBy == "newest")">Newest</option>
+                            <option value="name" selected="@(Model.SortBy == "name")">Name (A-Z)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Restaurant List -->
+                @if (Model.Restaurants.Any())
+                {
+                    <div class="restaurant-list">
+                        @foreach (var restaurant in Model.Restaurants)
+                        {
+                            <div class="restaurant-list-item">
+                                <a asp-action="Detail" asp-route-id="@restaurant.Id" class="restaurant-link">
+                                    <div class="restaurant-image-container">
+                                        <img src="@restaurant.PrimaryPhotoUrl" alt="@restaurant.Name" />
+                                        @if (restaurant.IsFeatured)
+                                        {
+                                            <span class="badge badge-featured">Featured</span>
+                                        }
+                                    </div>
+                                    <div class="restaurant-details">
+                                        <h3 class="restaurant-name">@restaurant.Name</h3>
+                                        <div class="restaurant-meta">
+                                            <span class="rating">
+                                                <i class="fas fa-star"></i>
+                                                @restaurant.AverageRating.ToString("0.0")
+                                                <span class="reviews">(@restaurant.TotalReviews reviews)</span>
+                                            </span>
+                                            <span class="separator">•</span>
+                                            <span class="cuisine">@restaurant.CuisineName</span>
+                                            <span class="separator">•</span>
+                                            <span class="price-range">@restaurant.PriceRange</span>
+                                        </div>
+                                        <div class="restaurant-location">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            @restaurant.Area, @restaurant.City
+                                        </div>
+                                        @if (restaurant.IsChildFriendly || restaurant.HasOutdoorSeating)
+                                        {
+                                            <div class="restaurant-features-inline">
+                                                @if (restaurant.IsChildFriendly)
+                                                {
+                                                    <span class="feature-tag">
+                                                        <i class="fas fa-child"></i> Child Friendly
+                                                    </span>
+                                                }
+                                                @if (restaurant.HasOutdoorSeating)
+                                                {
+                                                    <span class="feature-tag">
+                                                        <i class="fas fa-tree"></i> Outdoor Seating
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="restaurant-actions">
+                                        <button type="button" class="btn btn-primary">
+                                            Reserve <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <h3>No restaurants found</h3>
+                        <p>Try adjusting your search criteria or filters</p>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                    </div>
+                }
+            </main>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('sortSelect').addEventListener('change', function() {
+            const sortBy = this.value;
+            const url = new URL(window.location.href);
+            url.searchParams.set('sortBy', sortBy);
+            window.location.href = url.toString();
+        });
+    </script>
+}
+
+<style>
+.search-results-page {
+    min-height: calc(100vh - 200px);
+}
+
+.search-header {
+    background-color: var(--bg-light);
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.search-form-compact {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.results-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    padding: 2rem 0;
+}
+
+.filters-sidebar {
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+}
+
+.filter-section {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+
+.filter-section h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.filter-group {
+    margin-bottom: 2rem;
+}
+
+.filter-group:last-child {
+    margin-bottom: 0;
+}
+
+.filter-group h4 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-option {
+    padding: 0.75rem;
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--text-color);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-option:hover {
+    background-color: var(--bg-light);
+}
+
+.filter-option.active {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.results-content {
+    min-height: 500px;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.results-count h2 {
+    font-size: 1.5rem;
+    color: var(--text-color);
+}
+
+.sort-options {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sort-select {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    font-size: 1rem;
+}
+
+.restaurant-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.restaurant-list-item {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.restaurant-list-item:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+}
+
+.restaurant-link {
+    display: grid;
+    grid-template-columns: 250px 1fr auto;
+    gap: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    padding: 1rem;
+}
+
+.restaurant-image-container {
+    position: relative;
+    height: 180px;
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.restaurant-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.restaurant-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.restaurant-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.restaurant-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-light);
+    font-size: 0.95rem;
+}
+
+.separator {
+    color: var(--border-color);
+}
+
+.restaurant-location {
+    color: var(--text-light);
+}
+
+.restaurant-features-inline {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.feature-tag {
+    padding: 0.25rem 0.75rem;
+    background: var(--bg-light);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    color: var(--text-color);
+}
+
+.restaurant-actions {
+    display: flex;
+    align-items: center;
+}
+
+.no-results {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.no-results i {
+    font-size: 4rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.no-results h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.no-results p {
+    color: var(--text-light);
+    margin-bottom: 2rem;
+}
+
+
+    
+    .filters-sidebar {
+        position: static;
+    }
+    
+    .restaurant-link {
+        grid-template-columns: 1fr;
+    }
+    
+    .restaurant-actions {
+        justify-content: stretch;
+    }
+    
+    .restaurant-actions .btn {
+        width: 100%;
+    }
+}
+</style>

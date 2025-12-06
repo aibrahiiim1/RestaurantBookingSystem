@@ -6,128 +6,128 @@ using System.Text;
 
 namespace RestaurantBookingSystem.Services
 {
-    public interface ICustomerService
-    {
-        Task<Customer> GetCustomerByIdAsync(int id);
-        Task<Customer> GetCustomerByEmailAsync(string email);
-        Task<Customer> GetCustomerByPhoneAsync(string phone);
-        Task<Customer> CreateCustomerAsync(Customer customer);
-        Task<bool> UpdateCustomerAsync(Customer customer);
-        Task<List<RestaurantReview>> GetCustomerReviewsAsync(int customerId);
-        Task<bool> AddFavoriteRestaurantAsync(int customerId, int restaurantId);
-        Task<bool> RemoveFavoriteRestaurantAsync(int customerId, int restaurantId);
-        Task<List<Restaurant>> GetFavoriteRestaurantsAsync(int customerId);
-    }
+    //public interface ICustomerService
+    //{
+    //    Task<Customer> GetCustomerByIdAsync(int id);
+    //    Task<Customer> GetCustomerByEmailAsync(string email);
+    //    Task<Customer> GetCustomerByPhoneAsync(string phone);
+    //    Task<Customer> CreateCustomerAsync(Customer customer);
+    //    Task<bool> UpdateCustomerAsync(Customer customer);
+    //    Task<List<RestaurantReview>> GetCustomerReviewsAsync(int customerId);
+    //    Task<bool> AddFavoriteRestaurantAsync(int customerId, int restaurantId);
+    //    Task<bool> RemoveFavoriteRestaurantAsync(int customerId, int restaurantId);
+    //    Task<List<Restaurant>> GetFavoriteRestaurantsAsync(int customerId);
+    //}
 
-    public class CustomerService : ICustomerService
-    {
-        private readonly ApplicationDbContext _context;
+    //public class CustomerService : ICustomerService
+    //{
+    //    private readonly ApplicationDbContext _context;
 
-        public CustomerService(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+    //    public CustomerService(ApplicationDbContext context)
+    //    {
+    //        _context = context;
+    //    }
 
-        public async Task<Customer> GetCustomerByIdAsync(int id)
-        {
-            return await _context.Customers
-                .Include(c => c.Allergies)
-                .FirstOrDefaultAsync(c => c.Id == id);
-        }
+    //    public async Task<Customer> GetCustomerByIdAsync(int id)
+    //    {
+    //        return await _context.Customers
+    //            .Include(c => c.Allergies)
+    //            .FirstOrDefaultAsync(c => c.Id == id);
+    //    }
 
-        public async Task<Customer> GetCustomerByEmailAsync(string email)
-        {
-            return await _context.Customers
-                .Include(c => c.Allergies)
-                .FirstOrDefaultAsync(c => c.Email == email);
-        }
+    //    public async Task<Customer> GetCustomerByEmailAsync(string email)
+    //    {
+    //        return await _context.Customers
+    //            .Include(c => c.Allergies)
+    //            .FirstOrDefaultAsync(c => c.Email == email);
+    //    }
 
-        public async Task<Customer> GetCustomerByPhoneAsync(string phone)
-        {
-            return await _context.Customers
-                .Include(c => c.Allergies)
-                .FirstOrDefaultAsync(c => c.PhoneNumber == phone);
-        }
+    //    public async Task<Customer> GetCustomerByPhoneAsync(string phone)
+    //    {
+    //        return await _context.Customers
+    //            .Include(c => c.Allergies)
+    //            .FirstOrDefaultAsync(c => c.PhoneNumber == phone);
+    //    }
 
-        public async Task<Customer> CreateCustomerAsync(Customer customer)
-        {
-            customer.CreatedDate = DateTime.UtcNow;
-            customer.IsActive = true;
+    //    public async Task<Customer> CreateCustomerAsync(Customer customer)
+    //    {
+    //        customer.CreatedDate = DateTime.UtcNow;
+    //        customer.IsActive = true;
 
-            _context.Customers.Add(customer);
-            await _context.SaveChangesAsync();
+    //        _context.Customers.Add(customer);
+    //        await _context.SaveChangesAsync();
 
-            return customer;
-        }
+    //        return customer;
+    //    }
 
-        public async Task<bool> UpdateCustomerAsync(Customer customer)
-        {
-            try
-            {
-                _context.Customers.Update(customer);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
+    //    public async Task<bool> UpdateCustomerAsync(Customer customer)
+    //    {
+    //        try
+    //        {
+    //            _context.Customers.Update(customer);
+    //            await _context.SaveChangesAsync();
+    //            return true;
+    //        }
+    //        catch
+    //        {
+    //            return false;
+    //        }
+    //    }
 
-        public async Task<List<RestaurantReview>> GetCustomerReviewsAsync(int customerId)
-        {
-            return await _context.RestaurantReviews
-                .Include(r => r.Restaurant)
-                .Where(r => r.CustomerId == customerId)
-                .OrderByDescending(r => r.ReviewDate)
-                .ToListAsync();
-        }
+    //    public async Task<List<RestaurantReview>> GetCustomerReviewsAsync(int customerId)
+    //    {
+    //        return await _context.RestaurantReviews
+    //            .Include(r => r.Restaurant)
+    //            .Where(r => r.CustomerId == customerId)
+    //            .OrderByDescending(r => r.ReviewDate)
+    //            .ToListAsync();
+    //    }
 
-        public async Task<bool> AddFavoriteRestaurantAsync(int customerId, int restaurantId)
-        {
-            var exists = await _context.FavoriteRestaurants
-                .AnyAsync(f => f.CustomerId == customerId && f.RestaurantId == restaurantId);
+    //    public async Task<bool> AddFavoriteRestaurantAsync(int customerId, int restaurantId)
+    //    {
+    //        var exists = await _context.FavoriteRestaurants
+    //            .AnyAsync(f => f.CustomerId == customerId && f.RestaurantId == restaurantId);
 
-            if (exists)
-                return false;
+    //        if (exists)
+    //            return false;
 
-            var favorite = new FavoriteRestaurant
-            {
-                CustomerId = customerId,
-                RestaurantId = restaurantId,
-                AddedDate = DateTime.UtcNow
-            };
+    //        var favorite = new FavoriteRestaurant
+    //        {
+    //            CustomerId = customerId,
+    //            RestaurantId = restaurantId,
+    //            AddedDate = DateTime.UtcNow
+    //        };
 
-            _context.FavoriteRestaurants.Add(favorite);
-            await _context.SaveChangesAsync();
-            return true;
-        }
+    //        _context.FavoriteRestaurants.Add(favorite);
+    //        await _context.SaveChangesAsync();
+    //        return true;
+    //    }
 
-        public async Task<bool> RemoveFavoriteRestaurantAsync(int customerId, int restaurantId)
-        {
-            var favorite = await _context.FavoriteRestaurants
-                .FirstOrDefaultAsync(f => f.CustomerId == customerId && f.RestaurantId == restaurantId);
+    //    public async Task<bool> RemoveFavoriteRestaurantAsync(int customerId, int restaurantId)
+    //    {
+    //        var favorite = await _context.FavoriteRestaurants
+    //            .FirstOrDefaultAsync(f => f.CustomerId == customerId && f.RestaurantId == restaurantId);
 
-            if (favorite == null)
-                return false;
+    //        if (favorite == null)
+    //            return false;
 
-            _context.FavoriteRestaurants.Remove(favorite);
-            await _context.SaveChangesAsync();
-            return true;
-        }
+    //        _context.FavoriteRestaurants.Remove(favorite);
+    //        await _context.SaveChangesAsync();
+    //        return true;
+    //    }
 
-        public async Task<List<Restaurant>> GetFavoriteRestaurantsAsync(int customerId)
-        {
-            return await _context.FavoriteRestaurants
-                .Include(f => f.Restaurant)
-                .ThenInclude(r => r.Cuisine)
-                .Include(f => f.Restaurant)
-                .ThenInclude(r => r.Photos)
-                .Where(f => f.CustomerId == customerId)
-                .Select(f => f.Restaurant)
-                .ToListAsync();
-        }
-    }
+    //    public async Task<List<Restaurant>> GetFavoriteRestaurantsAsync(int customerId)
+    //    {
+    //        return await _context.FavoriteRestaurants
+    //            .Include(f => f.Restaurant)
+    //            .ThenInclude(r => r.Cuisine)
+    //            .Include(f => f.Restaurant)
+    //            .ThenInclude(r => r.Photos)
+    //            .Where(f => f.CustomerId == customerId)
+    //            .Select(f => f.Restaurant)
+    //            .ToListAsync();
+    //    }
+    //}
 
     public interface IAuthenticationService
     {
@@ -161,7 +161,7 @@ namespace RestaurantBookingSystem.Services
             if (!VerifyPassword(password, customer.PasswordHash))
                 return null;
 
-            customer.LastLoginDate = DateTime.UtcNow;
+            customer.LastLoginAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return customer;
@@ -203,7 +203,7 @@ namespace RestaurantBookingSystem.Services
                 PasswordHash = HashPassword(password),
                 IsGuest = false,
                 IsActive = true,
-                CreatedDate = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
                 ReceivePromotions = true,
                 ReceiveReminders = true
             };
@@ -256,39 +256,39 @@ namespace RestaurantBookingSystem.Services
         }
     }
 
-    public interface IEmailService
-    {
-        Task SendVerificationCodeAsync(string email, string code);
-        Task SendBookingConfirmationAsync(Reservation reservation);
-        Task SendCancellationConfirmationAsync(Reservation reservation);
-        Task SendReminderAsync(Reservation reservation);
-    }
+    //public interface IEmailService
+    //{
+    //    Task SendVerificationCodeAsync(string email, string code);
+    //    Task SendBookingConfirmationAsync(Reservation reservation);
+    //    Task SendCancellationConfirmationAsync(Reservation reservation);
+    //    Task SendReminderAsync(Reservation reservation);
+    //}
 
-    public class EmailService : IEmailService
-    {
-        public async Task SendVerificationCodeAsync(string email, string code)
-        {
-            // In production, integrate with SendGrid, AWS SES, or similar
-            Console.WriteLine($"Sending verification code {code} to {email}");
-            await Task.CompletedTask;
-        }
+    //public class EmailService : IEmailService
+    //{
+    //    public async Task SendVerificationCodeAsync(string email, string code)
+    //    {
+    //        // In production, integrate with SendGrid, AWS SES, or similar
+    //        Console.WriteLine($"Sending verification code {code} to {email}");
+    //        await Task.CompletedTask;
+    //    }
 
-        public async Task SendBookingConfirmationAsync(Reservation reservation)
-        {
-            Console.WriteLine($"Sending booking confirmation for {reservation.BookingReference}");
-            await Task.CompletedTask;
-        }
+    //    public async Task SendBookingConfirmationAsync(Reservation reservation)
+    //    {
+    //        Console.WriteLine($"Sending booking confirmation for {reservation.BookingReference}");
+    //        await Task.CompletedTask;
+    //    }
 
-        public async Task SendCancellationConfirmationAsync(Reservation reservation)
-        {
-            Console.WriteLine($"Sending cancellation confirmation for {reservation.BookingReference}");
-            await Task.CompletedTask;
-        }
+    //    public async Task SendCancellationConfirmationAsync(Reservation reservation)
+    //    {
+    //        Console.WriteLine($"Sending cancellation confirmation for {reservation.BookingReference}");
+    //        await Task.CompletedTask;
+    //    }
 
-        public async Task SendReminderAsync(Reservation reservation)
-        {
-            Console.WriteLine($"Sending reminder for {reservation.BookingReference}");
-            await Task.CompletedTask;
-        }
-    }
+    //    public async Task SendReminderAsync(Reservation reservation)
+    //    {
+    //        Console.WriteLine($"Sending reminder for {reservation.BookingReference}");
+    //        await Task.CompletedTask;
+    //    }
+    //}
 }

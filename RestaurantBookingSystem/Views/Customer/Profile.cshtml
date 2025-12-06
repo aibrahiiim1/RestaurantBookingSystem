@@ -1,0 +1,939 @@
+@model RestaurantBookingSystem.ViewModels.CustomerProfileViewModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="profile-page">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-user-circle"></i> My Profile</h1>
+            <p class="subtitle">Manage your account information and preferences</p>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <span>@TempData["Success"]</span>
+            </div>
+        }
+
+        <div class="profile-grid">
+            <!-- Left Column - Profile Overview -->
+            <div class="profile-sidebar">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                        {
+                            <img src="@Model.AvatarUrl" alt="@Model.FirstName" />
+                        }
+                        else
+                        {
+                            <div class="avatar-placeholder">
+                                @Model.FirstName.Substring(0, 1)@Model.LastName.Substring(0, 1)
+                            </div>
+                        }
+                        <button class="btn-change-avatar" onclick="document.getElementById('avatarUpload').click()">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <input type="file" id="avatarUpload" hidden accept="image/*" onchange="uploadAvatar()" />
+                    </div>
+
+                    <h2>@Model.FirstName @Model.LastName</h2>
+                    <p class="profile-email">@Model.Email</p>
+
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">@Model.TotalReservations</div>
+                            <div class="stat-label">Reservations</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">@Model.TotalReviews</div>
+                            <div class="stat-label">Reviews</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">@Model.FavoriteRestaurants</div>
+                            <div class="stat-label">Favorites</div>
+                        </div>
+                    </div>
+
+                    <div class="profile-badges">
+                        @if (Model.IsEmailVerified)
+                        {
+                            <span class="badge badge-verified">
+                                <i class="fas fa-check-circle"></i> Verified Email
+                            </span>
+                        }
+                        @if (Model.MemberSince.HasValue)
+                        {
+                            <span class="badge badge-member">
+                                <i class="fas fa-calendar"></i> Member since @Model.MemberSince.Value.ToString("MMM yyyy")
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <div class="quick-links">
+                    <a asp-controller="Booking" asp-action="MyReservations" class="quick-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>My Reservations</span>
+                    </a>
+                    <a asp-controller="Customer" asp-action="FavoriteRestaurants" class="quick-link">
+                        <i class="fas fa-heart"></i>
+                        <span>Favorite Restaurants</span>
+                    </a>
+                    <a asp-controller="Customer" asp-action="MyReviews" class="quick-link">
+                        <i class="fas fa-star"></i>
+                        <span>My Reviews</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Column - Profile Settings -->
+            <div class="profile-content">
+                <!-- Tab Navigation -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="personal" onclick="switchTab('personal')">
+                        <i class="fas fa-user"></i> Personal Info
+                    </button>
+                    <button class="tab-btn" data-tab="security" onclick="switchTab('security')">
+                        <i class="fas fa-lock"></i> Security
+                    </button>
+                    <button class="tab-btn" data-tab="preferences" onclick="switchTab('preferences')">
+                        <i class="fas fa-cog"></i> Preferences
+                    </button>
+                    <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications')">
+                        <i class="fas fa-bell"></i> Notifications
+                    </button>
+                </div>
+
+                <!-- Personal Info Tab -->
+                <div class="tab-content active" id="personal-tab">
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3>Personal Information</h3>
+                        </div>
+                        <div class="card-body">
+                            <form asp-controller="Customer" asp-action="UpdateProfile" method="post">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label asp-for="FirstName" class="form-label">First Name</label>
+                                        <input asp-for="FirstName" type="text" class="form-control" required />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label asp-for="LastName" class="form-label">Last Name</label>
+                                        <input asp-for="LastName" type="text" class="form-control" required />
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Email" class="form-label">Email Address</label>
+                                    <input asp-for="Email" type="email" class="form-control" required />
+                                    @if (!Model.IsEmailVerified)
+                                    {
+                                        <small class="text-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Email not verified. <a href="#">Resend verification email</a>
+                                        </small>
+                                    }
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                                    <input asp-for="PhoneNumber" type="tel" class="form-control" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="DateOfBirth" class="form-label">Date of Birth</label>
+                                    <input asp-for="DateOfBirth" type="date" class="form-control" />
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Tab -->
+                <div class="tab-content" id="security-tab">
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3>Change Password</h3>
+                        </div>
+                        <div class="card-body">
+                            <form asp-controller="Customer" asp-action="ChangePassword" method="post">
+                                <div class="form-group">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" name="currentPassword" class="form-control" required />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" name="newPassword" class="form-control" required 
+                                           onkeyup="checkPasswordStrength(this.value)" />
+                                    <div class="password-strength">
+                                        <div class="strength-bar">
+                                            <div class="strength-fill" id="strengthBar"></div>
+                                        </div>
+                                        <span class="strength-text" id="strengthText"></span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" name="confirmPassword" class="form-control" required />
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-key"></i> Update Password
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3>Two-Factor Authentication</h3>
+                        </div>
+                        <div class="card-body">
+                            <p>Add an extra layer of security to your account.</p>
+                            @if (Model.TwoFactorEnabled)
+                            {
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Two-factor authentication is enabled</span>
+                                </div>
+                                <button class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Disable 2FA
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-shield-alt"></i> Enable 2FA
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferences Tab -->
+                <div class="tab-content" id="preferences-tab">
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3>Dining Preferences</h3>
+                        </div>
+                        <div class="card-body">
+                            <form asp-controller="Customer" asp-action="UpdatePreferences" method="post">
+                                <div class="form-group">
+                                    <label class="form-label">Favorite Cuisines</label>
+                                    <div class="cuisine-tags">
+                                        @foreach (var cuisine in new[] { "Italian", "Japanese", "Mexican", "Chinese", "Indian", "French", "Thai", "Mediterranean" })
+                                        {
+                                            <label class="tag-option">
+                                                <input type="checkbox" name="cuisines" value="@cuisine" 
+                                                       @(Model.FavoriteCuisines?.Contains(cuisine) == true ? "checked" : "") />
+                                                <span>@cuisine</span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Dietary Restrictions</label>
+                                    <div class="dietary-options">
+                                        @foreach (var diet in new[] { "Vegetarian", "Vegan", "Gluten-Free", "Halal", "Kosher" })
+                                        {
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" name="dietary" value="@diet" 
+                                                       @(Model.DietaryRestrictions?.Contains(diet) == true ? "checked" : "") />
+                                                <span>@diet</span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Default Party Size</label>
+                                    <input type="number" name="defaultPartySize" class="form-control" 
+                                           value="@Model.DefaultPartySize" min="1" max="20" />
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Preferences
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Tab -->
+                <div class="tab-content" id="notifications-tab">
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3>Notification Settings</h3>
+                        </div>
+                        <div class="card-body">
+                            <form asp-controller="Customer" asp-action="UpdateNotifications" method="post">
+                                <div class="notification-group">
+                                    <h4>Reservation Notifications</h4>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="emailReservationConfirm" checked />
+                                        <span class="slider"></span>
+                                        <div class="label-text">
+                                            <strong>Email Confirmations</strong>
+                                            <p>Receive email when booking is confirmed</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="smsReminders" checked />
+                                        <span class="slider"></span>
+                                        <div class="label-text">
+                                            <strong>SMS Reminders</strong>
+                                            <p>Get text reminders before your reservation</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="emailCancellations" checked />
+                                        <span class="slider"></span>
+                                        <div class="label-text">
+                                            <strong>Cancellation Notifications</strong>
+                                            <p>Notify me of booking changes or cancellations</p>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="notification-group">
+                                    <h4>Marketing & Updates</h4>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="emailPromotions" />
+                                        <span class="slider"></span>
+                                        <div class="label-text">
+                                            <strong>Promotional Emails</strong>
+                                            <p>Receive special offers and discounts</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="emailNewRestaurants" />
+                                        <span class="slider"></span>
+                                        <div class="label-text">
+                                            <strong>New Restaurants</strong>
+                                            <p>Get notified about new restaurant openings</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="emailNewsletter" />
+                                        <span class="slider"></span>
+                                        <div class="label-text">
+                                            <strong>Newsletter</strong>
+                                            <p>Monthly dining tips and recommendations</p>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="danger-zone">
+            <div class="danger-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+            </div>
+            <div class="danger-body">
+                <div class="danger-item">
+                    <div>
+                        <strong>Delete Account</strong>
+                        <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
+                    </div>
+                    <button class="btn btn-danger" onclick="confirmDeleteAccount()">
+                        Delete Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        function uploadAvatar() {
+            const file = document.getElementById('avatarUpload').files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('avatar', file);
+
+                fetch('/Customer/UploadAvatar', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+
+        function checkPasswordStrength(password) {
+            const bar = document.getElementById('strengthBar');
+            const text = document.getElementById('strengthText');
+            
+            let strength = 0;
+            if (password.length >= 8) strength += 25;
+            if (/[A-Z]/.test(password)) strength += 25;
+            if (/[a-z]/.test(password)) strength += 25;
+            if (/[0-9]/.test(password)) strength += 25;
+
+            bar.style.width = strength + '%';
+            
+            if (strength === 0) {
+                bar.className = 'strength-fill';
+                text.textContent = '';
+            } else if (strength <= 25) {
+                bar.className = 'strength-fill weak';
+                text.textContent = 'Weak';
+            } else if (strength <= 50) {
+                bar.className = 'strength-fill fair';
+                text.textContent = 'Fair';
+            } else if (strength <= 75) {
+                bar.className = 'strength-fill good';
+                text.textContent = 'Good';
+            } else {
+                bar.className = 'strength-fill strong';
+                text.textContent = 'Strong';
+            }
+        }
+
+        function confirmDeleteAccount() {
+            if (confirm('Are you absolutely sure you want to delete your account? This action cannot be undone.')) {
+                if (confirm('This will permanently delete all your reservations, reviews, and personal data. Continue?')) {
+                    // Proceed with deletion
+                    window.location.href = '/Customer/DeleteAccount';
+                }
+            }
+        }
+    </script>
+}
+
+<style>
+.profile-page {
+    padding: 2rem 0;
+    background: #f5f7fa;
+    min-height: calc(100vh - 200px);
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.subtitle {
+    color: var(--text-light);
+    font-size: 1.125rem;
+}
+
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+}
+
+/* Profile Sidebar */
+.profile-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.profile-avatar {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 1.5rem;
+}
+
+.profile-avatar img,
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 700;
+}
+
+.btn-change-avatar {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 45px;
+    height: 45px;
+    background: var(--primary-color);
+    color: white;
+    border: 3px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.btn-change-avatar:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+.profile-card h2 {
+    font-size: 1.5rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.profile-email {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 1.5rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.profile-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.badge-verified {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-member {
+    background: #e7f3ff;
+    color: #0c5460;
+}
+
+.quick-links {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.quick-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    color: var(--text-color);
+    text-decoration: none;
+    border-bottom: 1px solid #e9ecef;
+    transition: var(--transition);
+}
+
+.quick-link:last-child {
+    border-bottom: none;
+}
+
+.quick-link:hover {
+    background: #f8f9fa;
+    color: var(--primary-color);
+}
+
+.quick-link i {
+    width: 24px;
+    color: var(--primary-color);
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+}
+
+.tab-btn:hover {
+    border-color: var(--primary-color);
+}
+
+.tab-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.settings-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.card-header h3 {
+    font-size: 1.25rem;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.text-warning {
+    color: #856404;
+    font-size: 0.875rem;
+}
+
+.password-strength {
+    margin-top: 0.5rem;
+}
+
+.strength-bar {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+}
+
+.strength-fill.weak { background: #dc3545; }
+.strength-fill.fair { background: #ffc107; }
+.strength-fill.good { background: #17a2b8; }
+.strength-fill.strong { background: #28a745; }
+
+.strength-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.cuisine-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.tag-option input[type="checkbox"] {
+    display: none;
+}
+
+.tag-option span {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.tag-option input[type="checkbox"]:checked + span {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.dietary-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.notification-group {
+    margin-bottom: 2rem;
+}
+
+.notification-group h4 {
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.toggle-switch input[type="checkbox"] {
+    display: none;
+}
+
+.slider {
+    width: 50px;
+    height: 28px;
+    background: #ccc;
+    border-radius: 14px;
+    position: relative;
+    transition: var(--transition);
+}
+
+.slider::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 4px;
+    left: 4px;
+    transition: var(--transition);
+}
+
+input[type="checkbox"]:checked + .slider {
+    background: var(--success-color);
+}
+
+input[type="checkbox"]:checked + .slider::before {
+    transform: translateX(22px);
+}
+
+.label-text strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+}
+
+.label-text p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+/* Danger Zone */
+.danger-zone {
+    background: white;
+    border: 2px solid var(--error-color);
+    border-radius: 12px;
+    margin-top: 3rem;
+    overflow: hidden;
+}
+
+.danger-header {
+    padding: 1rem 1.5rem;
+    background: #f8d7da;
+    border-bottom: 2px solid var(--error-color);
+}
+
+.danger-header h3 {
+    margin: 0;
+    color: var(--error-color);
+    font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.danger-body {
+    padding: 1.5rem;
+}
+
+.danger-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.danger-item strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.danger-item p {
+    margin: 0;
+    color: var(--text-light);
+}
+
+@@media (max-width: 1024px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
+
+    .danger-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-stats {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -124,18 +124,25 @@ namespace RestaurantBookingSystem.Controllers
                         && m.IsFromCustomer)
                     .CountAsync(),
                 TodayReservations = MapReservationsToViewModel(todayReservations),
-                UpcomingReservations = MapReservationsToViewModel(
-                    await _context.Reservations
-                        .Include(r => r.Customer)
-                        .Include(r => r.Table)
-                        .Where(r => r.RestaurantId == restaurantId 
-                            && r.ReservationDate.Date > today 
-                            && r.Status != ReservationStatus.Cancelled)
-                        .OrderBy(r => r.ReservationDate)
-                        .ThenBy(r => r.ReservationTime)
-                        .Take(10)
-                        .ToListAsync()
-                ),
+                UpcomingReservationsList = MapReservationsToViewModel(  // ⭐ Add "List" to property name
+    await _context.Reservations
+        .Include(r => r.Customer)
+        .Include(r => r.Table)
+        .Where(r => r.RestaurantId == restaurantId
+            && r.ReservationDate.Date > today
+            && r.Status != ReservationStatus.Cancelled)
+        .OrderBy(r => r.ReservationDate)
+        .ThenBy(r => r.ReservationTime)
+        .Take(10)
+        .ToListAsync()),
+
+// count
+//                UpcomingReservations = await _context.Reservations  // ⭐ Remove mapping, just count
+//    .Where(r => r.RestaurantId == restaurantId
+//        && r.ReservationDate.Date > today
+//        && r.Status != ReservationStatus.Cancelled)
+//    .CountAsync(),
+
                 ReservationsByStatus = await _context.Reservations
                     .Where(r => r.RestaurantId == restaurantId 
                         && r.ReservationDate.Month == today.Month)
@@ -193,7 +200,7 @@ namespace RestaurantBookingSystem.Controllers
                 DefaultBookingDurationMinutes = restaurant.DefaultBookingDurationMinutes,
                 TimeSlotIntervalMinutes = restaurant.TimeSlotIntervalMinutes,
                 CancellationPolicyHours = restaurant.CancellationPolicyHours,
-                OpeningTimes = restaurant.OpeningTimes.Select(ot => new OpeningTimeFormViewModel
+                OpeningTimes = restaurant.OpeningTimes.Select(ot => new OpeningTime
                 {
                     Id = ot.Id,
                     DayOfWeek = ot.DayOfWeek,
@@ -201,8 +208,7 @@ namespace RestaurantBookingSystem.Controllers
                     CloseTime = ot.CloseTime,
                     IsClosed = ot.IsClosed
                 }).ToList(),
-                AvailableCuisines = await _restaurantService.GetAllCuisinesAsync()
-            };
+                AvailableCuisines = _context.Cuisines?.Select(c => c.Name).ToList() ?? new List<string>()};
 
             return View(viewModel);
         }
@@ -213,7 +219,11 @@ namespace RestaurantBookingSystem.Controllers
         {
             if (!ModelState.IsValid)
             {
-                model.AvailableCuisines = await _restaurantService.GetAllCuisinesAsync();
+                model.AvailableCuisines = new List<string>
+{
+    "Italian", "Chinese", "Japanese", "Mexican", "Indian",
+    "French", "Thai", "Mediterranean", "American", "Greek"
+};
                 return View(model);
             }
 
@@ -267,11 +277,17 @@ namespace RestaurantBookingSystem.Controllers
         {
             var restaurantId = GetRestaurantId();
             var restaurant = await _restaurantService.GetRestaurantByIdAsync(restaurantId);
-
+            var today = DateTime.Today;
             var tables = await _context.Tables
                 .Where(t => t.RestaurantId == restaurantId)
                 .OrderBy(t => t.TableNumber)
                 .ToListAsync();
+            var todayReservations = await _context.Reservations
+    .Include(r => r.Customer)
+    .Include(r => r.Table)
+    .Where(r => r.RestaurantId == restaurantId && r.ReservationDate.Date == today)
+    .OrderBy(r => r.ReservationTime)
+    .ToListAsync();
 
             var viewModel = new TableManagementViewModel
             {
@@ -279,19 +295,44 @@ namespace RestaurantBookingSystem.Controllers
                 RestaurantName = restaurant.Name,
                 Tables = tables.Select(t => new TableViewModel
                 {
-                    Id = t.Id,
+                    TableId = t.Id,  // ⭐ Add this if missing
+                    Id = t.Id,  // Alias
                     TableNumber = t.TableNumber,
-                    SeatingCapacity = t.SeatingCapacity,
-                    Location = t.Location,
+                    MaxCapacity = t.MaxCapacity,  // ⭐ Add this if missing
+                    SeatingCapacity = t.SeatingCapacity,  // Alias
+                    MinCapacity = t.MinCapacity,  // ⭐ Add this if missing
+                    Location = t.Location.ToString() ?? "",  // Convert enum to string
+                    Shape = t.Shape,  // ⭐ Add this if missing
+                    IsActive = t.IsActive,
                     IsAvailable = t.IsAvailable,
-                    CurrentReservations = _context.Reservations
-                        .Count(r => r.TableId == t.Id 
-                            && r.ReservationDate.Date >= DateTime.Today 
-                            && r.Status != ReservationStatus.Cancelled)
-                }).ToList(),
-                NewTable = new TableFormViewModel { RestaurantId = restaurantId }
-            };
+                    IsWindowSeat = t.IsWindowSeat,  // ⭐ Add if missing
+                    IsAccessible = t.IsAccessible,  // ⭐ Add if missing
+                    IsOutdoor = t.IsOutdoor,  // ⭐ Add if missing
+                    IsPrivate = t.IsPrivate,  // ⭐ Add if missing
 
+                    CurrentReservations = todayReservations
+                        .Where(r => r.TableId == t.Id)  // ⭐ Filter by table
+                        .Select(r => new ReservationListItemViewModel
+                        {
+                            ReservationId = r.ReservationId,
+                            BookingReference = r.BookingReference,
+                            CustomerName = $"{r.Customer?.FirstName} {r.Customer?.LastName}",
+                            CustomerEmail = r.Customer?.Email ?? "",
+                            CustomerPhone = r.Customer?.PhoneNumber ?? "",
+                            RestaurantName = r.Restaurant?.Name ?? "",
+                            ReservationDate = r.ReservationDate,
+                            ReservationTime = r.ReservationTime,
+                            NumberOfGuests = r.NumberOfGuests,
+                            TableNumber = t.TableNumber,  // ⭐ Add table number
+                            Status = r.Status,
+                            CreatedAt = r.CreatedAt,
+                            SpecialRequests = r.SpecialRequests,
+                            Occasion = r.Occasion.Name ?? ""
+                        }).ToList()
+                }).ToList(),
+
+                NewTable = new TableFormViewModel { RestaurantId = restaurantId }  // ✅ FIXED - No .ToString()
+            };
             return View(viewModel);
         }
 

@@ -1,0 +1,837 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="dashboard-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1>Dashboard</h1>
+            <p class="subtitle">Welcome back! Here's what's happening today at @Model.Restaurant.Name</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline" onclick="window.print()">
+                <i class="fas fa-print"></i> Print Report
+            </button>
+            <a asp-action="RestaurantSettings" class="btn btn-primary">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">@Model.TotalReservationsToday</div>
+                <div class="stat-label">Today's Reservations</div>
+            </div>
+            <div class="stat-change positive">
+                <i class="fas fa-arrow-up"></i> Live
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">@Model.TotalReservationsThisMonth</div>
+                <div class="stat-label">This Month</div>
+            </div>
+            <div class="stat-change">
+                <i class="fas fa-chart-line"></i> Monthly
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">@Model.PendingReservations</div>
+                <div class="stat-label">Pending Reservations</div>
+            </div>
+            @if (Model.PendingReservations > 0)
+            {
+                <div class="stat-change warning">
+                    <i class="fas fa-exclamation-triangle"></i> Action Needed
+                </div>
+            }
+            else
+            {
+                <div class="stat-change positive">
+                    <i class="fas fa-check"></i> All Clear
+                </div>
+            }
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">@Model.UnreadMessages</div>
+                <div class="stat-label">Unread Messages</div>
+            </div>
+            @if (Model.UnreadMessages > 0)
+            {
+                <div class="stat-change warning">
+                    <i class="fas fa-bell"></i> New
+                </div>
+            }
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">@Model.AverageRating.ToString("0.0")</div>
+                <div class="stat-label">Average Rating</div>
+            </div>
+            <div class="stat-change">
+                <i class="fas fa-heart"></i> @Model.TotalReviews reviews
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+        <!-- Today's Reservations -->
+        <div class="dashboard-card wide">
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-calendar-check"></i>
+                    Today's Reservations
+                </h2>
+                <div class="card-actions">
+                    <a asp-action="Reservations" class="btn btn-sm btn-outline">View All</a>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (Model.TodayReservations.Any())
+                {
+                    <div class="reservations-timeline">
+                        @foreach (var reservation in Model.TodayReservations)
+                        {
+                            <div class="reservation-item status-@reservation.Status.ToString().ToLower()">
+                                <div class="reservation-time">
+                                    <div class="time-value">@reservation.ReservationTime.ToString("h:mm")</div>
+                                    <div class="time-period">@reservation.ReservationTime.ToString("tt")</div>
+                                </div>
+                                <div class="reservation-details">
+                                    <div class="reservation-ref">@reservation.BookingReference</div>
+                                    <div class="reservation-info">
+                                        <i class="fas fa-users"></i> @reservation.NumberOfGuests guests
+                                    </div>
+                                </div>
+                                <div class="reservation-status">
+                                    <span class="status-badge status-@reservation.Status.ToString().ToLower()">
+                                        @reservation.Status
+                                    </span>
+                                </div>
+                                <div class="reservation-actions">
+                                    <button class="btn-icon" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times"></i>
+                        <p>No reservations scheduled for today</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Upcoming Reservations -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-clock"></i>
+                    Upcoming Reservations
+                </h2>
+            </div>
+            <div class="card-body">
+                @if (Model.UpcomingReservations != null)
+                {
+                    <div class="upcoming-list">
+                        @foreach (var reservation in Model.UpcomingReservations.Take(5))
+                        {
+                            <div class="upcoming-item">
+                                <div class="upcoming-date">
+                                    <div class="date-day">@reservation.ReservationDate.ToString("dd")</div>
+                                    <div class="date-month">@reservation.ReservationDate.ToString("MMM")</div>
+                                </div>
+                                <div class="upcoming-info">
+                                    <div class="upcoming-ref">@reservation.BookingReference</div>
+                                    <div class="upcoming-time">
+                                        @reservation.ReservationTime.ToString("h:mm tt") • @reservation.NumberOfGuests guests
+                                    </div>
+                                </div>
+                                <button class="btn-icon-sm">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state small">
+                        <i class="fas fa-calendar"></i>
+                        <p>No upcoming reservations</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Reservation Status Chart -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-chart-pie"></i>
+                    Reservations by Status
+                </h2>
+            </div>
+            <div class="card-body">
+                @if (Model.ReservationsByStatus.Any())
+                {
+                    <div class="status-chart">
+                        @{
+                            var total = Model.ReservationsByStatus.Values.Sum();
+                            var colors = new Dictionary<string, string> {
+                                { "Confirmed", "#4facfe" },
+                                { "Pending", "#f5576c" },
+                                { "Completed", "#2da562" },
+                                { "Cancelled", "#dc2626" },
+                                { "NoShow", "#f59e0b" },
+                                { "Seated", "#667eea" }
+                            };
+                        }
+                        @foreach (var status in Model.ReservationsByStatus)
+                        {
+                            var percentage = total > 0 ? (status.Value * 100.0 / total) : 0;
+                            var color = colors.ContainsKey(status.Key) ? colors[status.Key] : "#6c757d";
+                            
+                            <div class="status-item">
+                                <div class="status-info">
+                                    <span class="status-dot" style="background: @color;"></span>
+                                    <span class="status-name">@status.Key</span>
+                                </div>
+                                <div class="status-stats">
+                                    <span class="status-count">@status.Value</span>
+                                    <span class="status-percent">@percentage.ToString("0.0")%</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state small">
+                        <i class="fas fa-chart-pie"></i>
+                        <p>No data available</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-bolt"></i>
+                    Quick Actions
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="quick-actions">
+                    <a asp-action="Tables" class="action-button">
+                        <i class="fas fa-table"></i>
+                        <span>Manage Tables</span>
+                    </a>
+                    <a asp-action="Reservations" class="action-button">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>New Reservation</span>
+                    </a>
+                    <a asp-action="RestaurantSettings" class="action-button">
+                        <i class="fas fa-clock"></i>
+                        <span>Opening Hours</span>
+                    </a>
+                    <a asp-action="Menu" class="action-button">
+                        <i class="fas fa-utensils"></i>
+                        <span>Menu Items</span>
+                    </a>
+                    <a asp-action="Photos" class="action-button">
+                        <i class="fas fa-images"></i>
+                        <span>Photo Gallery</span>
+                    </a>
+                    <a asp-action="Reviews" class="action-button">
+                        <i class="fas fa-star"></i>
+                        <span>Reviews</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restaurant Info -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-info-circle"></i>
+                    Restaurant Info
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="info-list">
+                    <div class="info-item">
+                        <i class="fas fa-utensils"></i>
+                        <span>@Model.Restaurant.Name</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>@Model.Restaurant.City, @Model.Restaurant.Area</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-chair"></i>
+                        <span>@Model.Restaurant.TotalSeatingCapacity Seats</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <span>@Model.Restaurant.DefaultBookingDurationMinutes min bookings</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-ban"></i>
+                        <span>@Model.Restaurant.CancellationPolicyHours hrs cancellation</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh dashboard every 5 minutes
+        setTimeout(() => {
+            location.reload();
+        }, 300000);
+
+        // Reservation item click handler
+        document.querySelectorAll('.reservation-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (!e.target.closest('.btn-icon')) {
+                    const ref = this.querySelector('.reservation-ref').textContent;
+                    window.location.href = `/Admin/ReservationDetails?reference=${ref}`;
+                }
+            });
+        });
+    </script>
+}
+
+<style>
+.dashboard-page {
+    padding: 2rem;
+    background: #f5f7fa;
+    min-height: calc(100vh - 80px);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: var(--text-light);
+    font-size: 1rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    gap: 1rem;
+    align-items: start;
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+.stat-change {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #f8f9fa;
+    color: var(--text-light);
+}
+
+.stat-change.positive {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stat-change.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.5rem;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    grid-column: span 6;
+}
+
+.dashboard-card.wide {
+    grid-column: span 12;
+}
+
+.card-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h2 {
+    font-size: 1.25rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-header h2 i {
+    color: var(--primary-color);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Reservations Timeline */
+.reservations-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reservation-item {
+    display: grid;
+    grid-template-columns: 80px 1fr auto auto;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    align-items: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.reservation-item:hover {
+    background: #e9ecef;
+    transform: translateX(4px);
+}
+
+.reservation-time {
+    text-align: center;
+}
+
+.time-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1;
+}
+
+.time-period {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+}
+
+.reservation-details {
+    flex: 1;
+}
+
+.reservation-ref {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.reservation-info {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.status-confirmed {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-badge.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.status-completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.status-cancelled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.status-seated {
+    background: #e7d4f8;
+    color: #5a2d82;
+}
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-icon:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Upcoming List */
+.upcoming-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.upcoming-item {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.upcoming-item:hover {
+    background: #e9ecef;
+}
+
+.upcoming-date {
+    width: 50px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.date-day {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1;
+}
+
+.date-month {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+}
+
+.upcoming-info {
+    flex: 1;
+}
+
+.upcoming-ref {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.upcoming-time {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.btn-icon-sm {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+/* Status Chart */
+.status-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.status-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.status-name {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.status-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-count {
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.status-percent {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.action-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: var(--transition);
+}
+
+.action-button:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.action-button i {
+    font-size: 1.5rem;
+}
+
+.action-button span {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Info List */
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.info-item i {
+    width: 24px;
+    color: var(--primary-color);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-light);
+}
+
+.empty-state.small {
+    padding: 2rem 1rem;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.empty-state.small i {
+    font-size: 2rem;
+}
+
+/* Responsive */
+@@media (max-width: 1200px) {
+    .dashboard-card {
+        grid-column: span 12;
+    }
+}
+
+@@media (max-width: 768px) {
+    .dashboard-page {
+        padding: 1rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .header-actions {
+        width: 100%;
+    }
+
+    .header-actions .btn {
+        flex: 1;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-item {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@@media print {
+    .header-actions,
+    .card-actions,
+    .btn-icon,
+    .action-button {
+        display: none;
+    }
+}
+</style>

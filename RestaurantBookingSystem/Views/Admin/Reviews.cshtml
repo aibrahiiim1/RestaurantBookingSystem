@@ -1,0 +1,970 @@
+@model ReviewsManagementViewModel
+@{
+    ViewData["Title"] = "Manage Reviews";
+}
+
+<div class="reviews-page">
+    <div class="container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-star"></i> Manage Reviews</h1>
+                <p class="subtitle">Monitor and respond to customer feedback</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="exportReviews()">
+                    <i class="fas fa-download"></i> Export Reviews
+                </button>
+            </div>
+        </div>
+
+        <!-- Rating Overview -->
+        <div class="rating-overview">
+            <div class="overview-card">
+                <div class="rating-display">
+                    <div class="rating-number">@Model.AverageRating.ToString("0.0")</div>
+                    <div class="rating-stars">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            if (i <= Model.AverageRating)
+                            {
+                                <i class="fas fa-star"></i>
+                            }
+                            else if (i - 0.5 <= Model.AverageRating)
+                            {
+                                <i class="fas fa-star-half-alt"></i>
+                            }
+                            else
+                            {
+                                <i class="far fa-star"></i>
+                            }
+                        }
+                    </div>
+                    <div class="rating-count">Based on @Model.TotalReviews reviews</div>
+                </div>
+            </div>
+
+            <div class="rating-breakdown">
+                @for (int i = 5; i >= 1; i--)
+                {
+                    var count = Model.RatingDistribution.ContainsKey(i) ? Model.RatingDistribution[i] : 0;
+                    var percentage = Model.TotalReviews > 0 ? (count * 100.0 / Model.TotalReviews) : 0;
+                    
+                    <div class="rating-bar-row">
+                        <span class="star-label">@i <i class="fas fa-star"></i></span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: @percentage%"></div>
+                        </div>
+                        <span class="count-label">@count</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-rating="all" onclick="filterByRating('all')">
+                    All Reviews (@Model.Reviews.Count())
+                </button>
+                <button class="filter-tab" data-rating="5" onclick="filterByRating('5')">
+                    5 Stars (@Model.Reviews.Count(r => r.Rating == 5))
+                </button>
+                <button class="filter-tab" data-rating="4" onclick="filterByRating('4')">
+                    4 Stars (@Model.Reviews.Count(r => r.Rating == 4))
+                </button>
+                <button class="filter-tab" data-rating="3" onclick="filterByRating('3')">
+                    3 Stars (@Model.Reviews.Count(r => r.Rating == 3))
+                </button>
+                <button class="filter-tab" data-rating="2" onclick="filterByRating('2')">
+                    2 Stars (@Model.Reviews.Count(r => r.Rating == 2))
+                </button>
+                <button class="filter-tab" data-rating="1" onclick="filterByRating('1')">
+                    1 Star (@Model.Reviews.Count(r => r.Rating == 1))
+                </button>
+            </div>
+
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label>Sort by:</label>
+                    <select id="sortBy" class="form-control-sm" onchange="sortReviews()">
+                        <option value="recent">Most Recent</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="highest">Highest Rated</option>
+                        <option value="lowest">Lowest Rated</option>
+                        <option value="helpful">Most Helpful</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="statusFilter" class="form-control-sm" onchange="filterByStatus()">
+                        <option value="all">All</option>
+                        <option value="published">Published</option>
+                        <option value="pending">Pending</option>
+                        <option value="flagged">Flagged</option>
+                    </select>
+                </div>
+
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchBox" placeholder="Search reviews..." onkeyup="searchReviews()" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews List -->
+        <div class="reviews-list">
+            @foreach (var review in Model.Reviews.OrderByDescending(r => r.CreatedAt))
+            {
+                <div class="review-card" data-rating="@review.Rating" data-status="@review.Status.ToString().ToLower()">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="reviewer-details">
+                                <strong>@review.CustomerName</strong>
+                                @if (review.IsVerifiedGuest)
+                                {
+                                    <span class="verified-badge">
+                                        <i class="fas fa-check-circle"></i> Verified Guest
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="review-meta">
+                            <div class="review-rating">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    if (i <= review.Rating)
+                                    {
+                                        <i class="fas fa-star"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="far fa-star"></i>
+                                    }
+                                }
+                            </div>
+                            <div class="review-date">@review.CreatedAt.ToString("MMM dd, yyyy")</div>
+                        </div>
+                    </div>
+
+                    <div class="review-content">
+                        @if (!string.IsNullOrEmpty(review.Title))
+                        {
+                            <h4>@review.Title</h4>
+                        }
+                        <p>@review.Comment</p>
+
+                        @if (review.Photos.Any())
+                        {
+                            <div class="review-photos">
+                                @foreach (var photo in review.Photos)
+                                {
+                                    <img src="@photo.Url" alt="Review photo" class="review-photo" />
+                                }
+                            </div>
+                        }
+
+                        <div class="review-aspects">
+                            @if (review.FoodRating.HasValue)
+                            {
+                                <div class="aspect">
+                                    <i class="fas fa-utensils"></i>
+                                    <span>Food: @review.FoodRating/5</span>
+                                </div>
+                            }
+                            @if (review.ServiceRating.HasValue)
+                            {
+                                <div class="aspect">
+                                    <i class="fas fa-concierge-bell"></i>
+                                    <span>Service: @review.ServiceRating/5</span>
+                                </div>
+                            }
+                            @if (review.AmbianceRating.HasValue)
+                            {
+                                <div class="aspect">
+                                    <i class="fas fa-moon"></i>
+                                    <span>Ambiance: @review.AmbianceRating/5</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(review.RestaurantResponse))
+                    {
+                        <div class="restaurant-response">
+                            <div class="response-header">
+                                <i class="fas fa-reply"></i>
+                                <strong>Response from Restaurant</strong>
+                                <span class="response-date">@review.ResponseDate?.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <p>@review.RestaurantResponse</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="response-prompt">
+                            <button class="btn-respond" onclick="openResponseModal(@review.ReviewId)">
+                                <i class="fas fa-reply"></i> Respond to Review
+                            </button>
+                        </div>
+                    }
+
+                    <div class="review-footer">
+                        <div class="review-stats">
+                            <button class="stat-button">
+                                <i class="fas fa-thumbs-up"></i>
+                                <span>Helpful (@review.HelpfulCount)</span>
+                            </button>
+                            @if (review.IsFlagged)
+                            {
+                                <span class="flag-badge">
+                                    <i class="fas fa-flag"></i> Flagged
+                                </span>
+                            }
+                        </div>
+
+                        <div class="review-actions">
+                            @if (review.Status == RestaurantBookingSystem.Models.ReviewStatus.Pending)
+                            {
+                                <button class="btn btn-sm btn-success" onclick="approveReview(@review.ReviewId)">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                            }
+                            @if (review.Status == RestaurantBookingSystem.Models.ReviewStatus.Published)
+                            {
+                                <button class="btn btn-sm btn-outline" onclick="hideReview(@review.ReviewId)">
+                                    <i class="fas fa-eye-slash"></i> Hide
+                                </button>
+                            }
+                            <button class="btn btn-sm btn-outline" onclick="flagReview(@review.ReviewId)">
+                                <i class="fas fa-flag"></i> Flag
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteReview(@review.ReviewId)">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (!Model.Reviews.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-star"></i>
+                <h3>No Reviews Yet</h3>
+                <p>Your restaurant hasn't received any reviews yet.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Response Modal -->
+<div id="responseModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Respond to Review</h3>
+            <button class="modal-close" onclick="closeResponseModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="response-tips">
+                <h4><i class="fas fa-lightbulb"></i> Tips for Responding</h4>
+                <ul>
+                    <li>Thank the customer for their feedback</li>
+                    <li>Address specific concerns mentioned</li>
+                    <li>Be professional and courteous</li>
+                    <li>Offer to discuss further offline if needed</li>
+                </ul>
+            </div>
+            <form id="responseForm">
+                <input type="hidden" id="reviewId" />
+                <div class="form-group">
+                    <label class="form-label">Your Response</label>
+                    <textarea id="responseText" class="form-control" rows="6" 
+                              placeholder="Write your response here..." required></textarea>
+                    <small class="form-help">Maximum 500 characters</small>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeResponseModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitResponse()">
+                <i class="fas fa-paper-plane"></i> Send Response
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterByRating(rating) {
+            // Update active tab
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filter reviews
+            document.querySelectorAll('.review-card').forEach(card => {
+                if (rating === 'all' || card.dataset.rating === rating) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterByStatus() {
+            const status = document.getElementById('statusFilter').value;
+            
+            document.querySelectorAll('.review-card').forEach(card => {
+                if (status === 'all' || card.dataset.status === status) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function sortReviews() {
+            const sortBy = document.getElementById('sortBy').value;
+            // Implement sorting logic
+            console.log('Sort by:', sortBy);
+        }
+
+        function searchReviews() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            document.querySelectorAll('.review-card').forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+        }
+
+        function openResponseModal(reviewId) {
+            document.getElementById('reviewId').value = reviewId;
+            document.getElementById('responseModal').style.display = 'flex';
+        }
+
+        function closeResponseModal() {
+            document.getElementById('responseModal').style.display = 'none';
+            document.getElementById('responseForm').reset();
+        }
+
+        function submitResponse() {
+            const reviewId = document.getElementById('reviewId').value;
+            const response = document.getElementById('responseText').value;
+
+            fetch(`/Admin/RespondToReview/${reviewId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ response: response })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeResponseModal();
+                    location.reload();
+                }
+            });
+        }
+
+        function approveReview(reviewId) {
+            if (confirm('Approve and publish this review?')) {
+                fetch(`/Admin/ApproveReview/${reviewId}`, { method: 'POST' })
+                    .then(() => location.reload());
+            }
+        }
+
+        function hideReview(reviewId) {
+            if (confirm('Hide this review from public view?')) {
+                fetch(`/Admin/HideReview/${reviewId}`, { method: 'POST' })
+                    .then(() => location.reload());
+            }
+        }
+
+        function flagReview(reviewId) {
+            const reason = prompt('Reason for flagging this review:');
+            if (reason) {
+                fetch(`/Admin/FlagReview/${reviewId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason })
+                })
+                .then(() => location.reload());
+            }
+        }
+
+        function deleteReview(reviewId) {
+            if (confirm('Are you sure you want to permanently delete this review?')) {
+                fetch(`/Admin/DeleteReview/${reviewId}`, { method: 'DELETE' })
+                    .then(() => location.reload());
+            }
+        }
+
+        function exportReviews() {
+            window.location.href = '/Admin/ExportReviews';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('responseModal');
+            if (event.target == modal) {
+                closeResponseModal();
+            }
+        }
+    </script>
+}
+
+<style>
+.reviews-page {
+    padding: 2rem;
+    background: #f5f7fa;
+    min-height: calc(100vh - 80px);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Rating Overview */
+.rating-overview {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.overview-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.rating-number {
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1;
+}
+
+.rating-stars {
+    font-size: 1.5rem;
+    color: #ffc107;
+    margin: 1rem 0;
+}
+
+.rating-count {
+    color: var(--text-light);
+}
+
+.rating-breakdown {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.rating-bar-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 60px;
+    gap: 1rem;
+    align-items: center;
+}
+
+.star-label {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.star-label i {
+    color: #ffc107;
+}
+
+.progress-bar-container {
+    height: 12px;
+    background: #e9ecef;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
+    transition: width 0.3s ease;
+}
+
+.count-label {
+    text-align: right;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+/* Filter Bar */
+.filter-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-tab {
+    padding: 0.75rem 1.5rem;
+    background: #f8f9fa;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-color);
+    transition: var(--transition);
+}
+
+.filter-tab:hover {
+    background: #e9ecef;
+}
+
+.filter-tab.active {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1.5rem;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.form-control-sm {
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+}
+
+.search-box {
+    flex: 1;
+    position: relative;
+    min-width: 250px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+}
+
+/* Reviews List */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.review-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1.5rem;
+}
+
+.reviewer-info {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.reviewer-avatar {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.reviewer-details strong {
+    display: block;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    background: #d4edda;
+    color: #155724;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.review-meta {
+    text-align: right;
+}
+
+.review-rating {
+    font-size: 1.25rem;
+    color: #ffc107;
+    margin-bottom: 0.5rem;
+}
+
+.review-date {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.review-content h4 {
+    font-size: 1.125rem;
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+}
+
+.review-content p {
+    color: var(--text-color);
+    line-height: 1.8;
+    margin-bottom: 1rem;
+}
+
+.review-photos {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.review-photo {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.review-aspects {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.aspect {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.aspect i {
+    color: var(--primary-color);
+}
+
+.restaurant-response {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: #e7f3ff;
+    border-left: 4px solid #0c5460;
+    border-radius: 8px;
+}
+
+.response-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    color: #0c5460;
+}
+
+.response-date {
+    margin-left: auto;
+    font-size: 0.875rem;
+}
+
+.restaurant-response p {
+    color: #0c5460;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.response-prompt {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.btn-respond {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+}
+
+.btn-respond:hover {
+    background: var(--primary-dark);
+}
+
+.review-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.review-stats {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.stat-button {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+.flag-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #fff3cd;
+    color: #856404;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.review-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: white;
+    border: none;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #ffc107;
+    margin-bottom: 1.5rem;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.response-tips {
+    background: #fff3cd;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.response-tips h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #856404;
+    margin-bottom: 1rem;
+}
+
+.response-tips ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #856404;
+}
+
+.response-tips li {
+    margin-bottom: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.form-help {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+@@media (max-width: 768px) {
+    .reviews-page {
+        padding: 1rem;
+    }
+
+    .rating-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .review-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .review-meta {
+        text-align: left;
+    }
+
+    .review-footer {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .review-actions {
+        flex-wrap: wrap;
+    }
+}
+</style>
